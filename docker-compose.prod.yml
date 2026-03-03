@@ -1,0 +1,94 @@
+version: '3.8'
+
+# Production MongoDB Configuration
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+# 
+# This file includes:
+# - MongoDB with authentication
+# - Backup and restore capabilities
+# - Resource limits
+# - Enhanced security
+# - Persistent volumes with backups
+# - Monitoring and logging
+
+services:
+  mongo:
+    image: mongo:7-ubuntu
+    container_name: mongo-prod
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: elearning
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin123}
+      # Additional MongoDB configurations
+      MONGO_LOG_LEVEL: info
+    volumes:
+      # Data persistence
+      - mongo_data_prod:/data/db
+      - mongo_config_prod:/data/configdb
+      # Backup volume
+      - mongo_backups:/data/backups
+      # Custom initialization script (optional)
+      # - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - elearning_prod_network
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    # Logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "3"
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    read_only_rootfs: false
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+
+volumes:
+  mongo_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MONGO_DATA_PATH:-./data/mongo}
+  mongo_config_prod:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MONGO_CONFIG_PATH:-./data/mongo_config}
+  mongo_backups:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MONGO_BACKUP_PATH:-./data/mongo_backups}
+
+networks:
+  elearning_prod_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
