@@ -67,10 +67,10 @@ function SubModuleManagement() {
     try {
       setUploading(true)
       setError('')
-      await pdfsAPI.upload(selectedSubModule.id, file)
+      await pdfsAPI.upload(selectedSubModule._id, file)
       alert('PDF uploadé avec succès!')
       // Recharger le cours
-      await handleSubModuleClick(selectedSubModule.id)
+      await handleSubModuleClick(selectedSubModule._id)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -86,7 +86,7 @@ function SubModuleManagement() {
       await pdfsAPI.delete(pdfId)
       alert('PDF supprimé')
       if (selectedSubModule) {
-        await handleSubModuleClick(selectedSubModule.id)
+        await handleSubModuleClick(selectedSubModule._id)
       } else {
         await loadModule()
       }
@@ -124,14 +124,14 @@ function SubModuleManagement() {
           {selectedSubModule.pdfs && selectedSubModule.pdfs.length > 0 ? (
             <div className="pdfs-list">
               {selectedSubModule.pdfs.map(pdf => (
-                <div key={pdf.id} className="pdf-item">
-                  <span>{pdf.nom_fichier}</span>
-                  <span>{(pdf.taille_fichier / 1024).toFixed(2)} KB</span>
+                <div key={pdf._id} className="pdf-item">
+                  <span>{pdf.nomFichier}</span>
+                  <span>{(pdf.tailleFichier / 1024).toFixed(2)} KB</span>
                   <div className="pdf-actions">
-                    <button onClick={() => pdfsAPI.download(pdf.id)} className="btn btn-small">
+                    <button onClick={() => pdfsAPI.download(pdf._id)} className="btn btn-small">
                       Télécharger
                     </button>
-                    <button onClick={() => handleDeletePdf(pdf.id)} className="btn btn-small btn-danger">
+                    <button onClick={() => handleDeletePdf(pdf._id)} className="btn btn-small btn-danger">
                       Supprimer
                     </button>
                   </div>
@@ -191,7 +191,7 @@ function SubModuleManagement() {
       <div className="sub-modules-list">
         {module.sub_modules && module.sub_modules.length > 0 ? (
           module.sub_modules.map(subModule => (
-            <div key={subModule.id} className="sub-module-item" onClick={() => handleSubModuleClick(subModule.id)}>
+            <div key={subModule._id} className="sub-module-item" onClick={() => handleSubModuleClick(subModule._id)}>
               <h3>{subModule.titre}</h3>
               {subModule.description && <p>{subModule.description}</p>}
               {subModule.sous_modules && subModule.sous_modules.length > 0 && (
@@ -199,9 +199,9 @@ function SubModuleManagement() {
                     <strong>Sous-cours:</strong>
                   <ul>
                     {subModule.sous_modules.map(subSub => (
-                      <li key={subSub.id} onClick={(e) => {
+                      <li key={subSub._id} onClick={(e) => {
                         e.stopPropagation()
-                        handleSubModuleClick(subSub.id)
+                        handleSubModuleClick(subSub._id)
                       }}>
                         {subSub.titre}
                       </li>

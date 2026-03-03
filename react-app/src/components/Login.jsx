@@ -18,6 +18,12 @@ function Login() {
   const cardRef = useRef(null)
 
   useEffect(() => {
+    const authMessage = localStorage.getItem('authMessage')
+    if (authMessage) {
+      setError(authMessage)
+      localStorage.removeItem('authMessage')
+    }
+
     // Vérifier si l'utilisateur est déjà connecté
     const token = localStorage.getItem('token')
     if (token) {

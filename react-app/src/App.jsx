@@ -12,12 +12,15 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
       <Route path="/dashboard/student" element={<DashboardStudent />} />
       <Route path="/dashboard/teacher" element={<DashboardTeacher />} />
       <Route path="/module/:moduleId" element={<ModuleView />} />
       <Route path="/module/:moduleId/feedback" element={<ModuleFeedback />} />
+      <Route path="/feedback/module/:moduleId" element={<ModuleFeedback />} />
       <Route path="/teacher/module/:moduleId" element={<SubModuleManagement />} />
       <Route path="/quiz/:quizId" element={<QuizView />} />
+      <Route path="/exercise/:exerciseId" element={<ExerciseView />} />
       <Route path="/exercises/:exerciseId" element={<ExerciseView />} />
     </Routes>
   )

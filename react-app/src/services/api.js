@@ -1,31 +1,88 @@
 const API_BASE_URL = 'http://localhost:5000/api';
+const SESSION_EXPIRED_MESSAGE = 'Session expirée, veuillez vous reconnecter';
+
+const handleUnauthorized = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.setItem('authMessage', SESSION_EXPIRED_MESSAGE);
+  alert(SESSION_EXPIRED_MESSAGE);
+  window.location.href = '/login';
+};
+
+const apiFetch = async (url, options = {}) => {
+  const token = localStorage.getItem('token');
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(token && { Authorization: `Bearer ${token}` }),
+      'Content-Type': 'application/json',
+      ...options?.headers
+    }
+  });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+    throw new Error(SESSION_EXPIRED_MESSAGE);
+  }
+
+  return response;
+};
 
 // Fonction utilitaire pour les requêtes
 const request = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
-  
+  const isFormData = options.body instanceof FormData;
+
   const config = {
     headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers
     },
     ...options
   };
+
+  if (!isFormData) {
+    config.headers = {
+      'Content-Type': 'application/json',
+      ...config.headers
+    };
+  }
 
   if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
     config.body = JSON.stringify(config.body);
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Erreur serveur');
+    const response = await apiFetch(`${API_BASE_URL}${endpoint}`, config);
+    const contentType = response.headers.get('content-type') || '';
+    let data = null;
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
+      data = text ? { message: text } : {};
     }
     
-    return data;
+    if (!response.ok) {
+      // Handle error response
+      let errorMessage = 'Erreur serveur';
+      
+      if (data.error) {
+        // Backend sends { error: { message: '...', type: '...' } }
+        if (typeof data.error === 'object' && data.error.message) {
+          errorMessage = data.error.message;
+        } else if (typeof data.error === 'string') {
+          errorMessage = data.error;
+        }
+      } else if (data.message) {
+        errorMessage = data.message;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    // Backend returns { success: true, data: {...}, message: '...' }
+    // Client expects just the data, so return data property if it exists
+    return data.data !== undefined ? data.data : data;
   } catch (error) {
     console.error('Erreur API:', error);
     throw error;
@@ -72,14 +129,10 @@ export const pdfsAPI = {
     const formData = new FormData();
     formData.append('pdf', file);
     formData.append('sub_module_id', subModuleId);
-    
-    const token = localStorage.getItem('token');
-    
-    return fetch(`${API_BASE_URL}/pdfs/upload`, {
+
+    return apiFetch(`${API_BASE_URL}/pdfs/upload`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers: {},
       body: formData
     }).then(res => res.json());
   },
@@ -88,13 +141,9 @@ export const pdfsAPI = {
   
   download: async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`${API_BASE_URL}/pdfs/${id}/download`, {
+      const response = await apiFetch(`${API_BASE_URL}/pdfs/${id}/download`, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: {}
       });
       
       if (!response.ok) {
@@ -134,6 +183,8 @@ export const pdfsAPI = {
 
 // Quiz
 export const quizAPI = {
+  checkModuleExisting: (moduleId) => request(`/quiz/check/module/${moduleId}`),
+
   generate: (pdfId) => request(`/quiz/generate/${pdfId}`, {
     method: 'POST'
   }),
@@ -148,7 +199,7 @@ export const quizAPI = {
   
   submit: (quizId, reponses) => request(`/quiz/${quizId}/submit`, {
     method: 'POST',
-    body: { reponses }
+    body: { reponsesEtudiant: reponses }
   }),
   
   getById: (quizId) => request(`/quiz/${quizId}`),
@@ -158,6 +209,8 @@ export const quizAPI = {
 
 // Exercices
 export const exercisesAPI = {
+  checkModuleExisting: (moduleId) => request(`/exercises/check/module/${moduleId}`),
+
   generate: (pdfId) => request(`/exercises/generate/${pdfId}`, {
     method: 'POST'
   }),

@@ -20,8 +20,8 @@ function StudentEnrollment({ moduleId }) {
         enrollmentsAPI.getModuleStudents(moduleId),
         enrollmentsAPI.getAvailableStudents(moduleId)
       ])
-      setEnrolledStudents(enrolled)
-      setAvailableStudents(available)
+      setEnrolledStudents(Array.isArray(enrolled) ? enrolled : [])
+      setAvailableStudents(Array.isArray(available) ? available : [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -76,7 +76,7 @@ function StudentEnrollment({ moduleId }) {
         {enrolledStudents.length > 0 ? (
           <div className="student-list">
             {enrolledStudents.map(student => (
-              <div key={student.id} className="student-item enrolled">
+              <div key={student._id} className="student-item enrolled">
                 <div className="student-info">
                   <strong>{student.nom}</strong>
                   <span className="student-email">{student.email}</span>
@@ -84,7 +84,7 @@ function StudentEnrollment({ moduleId }) {
                 </div>
                 <button
                   className="btn btn-danger btn-small"
-                  onClick={() => handleUnenrollStudent(student.id)}
+                  onClick={() => handleUnenrollStudent(student._id)}
                 >
                   Retirer
                 </button>
@@ -110,14 +110,14 @@ function StudentEnrollment({ moduleId }) {
         {filteredAvailable.length > 0 ? (
           <div className="student-list">
             {filteredAvailable.map(student => (
-              <div key={student.id} className="student-item available">
+              <div key={student._id} className="student-item available">
                 <div className="student-info">
                   <strong>{student.nom}</strong>
                   <span className="student-email">{student.email}</span>
                 </div>
                 <button
                   className="btn btn-primary btn-small"
-                  onClick={() => handleEnrollStudent(student.id)}
+                  onClick={() => handleEnrollStudent(student._id)}
                 >
                   Ajouter
                 </button>

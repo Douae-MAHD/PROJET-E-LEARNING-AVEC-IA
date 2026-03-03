@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { feedbackAPI } from '../services/api'
-import './Card.css'
+import './FeedbacksViewSection.css'
 
 function FeedbacksViewSection() {
   const [results, setResults] = useState({ quiz: [], exercises: [] })
@@ -20,9 +20,20 @@ function FeedbacksViewSection() {
       setLoading(true)
       setError('')
       const data = await feedbackAPI.getTeacherResults()
-      setResults(data)
+      const normalizeNote = (it) => {
+        if (!it) return it
+        const note = it.note ?? it.note_quiz ?? it.note_exercice ?? it.note_exercises ?? it.score
+        const points_forts = it.points_forts ?? it.points_forts_globaux ?? it.forces ?? it.strengths
+        const points_faibles = it.points_faibles ?? it.points_faibles_globaux ?? it.points_faibles_exo ?? it.points_amelioration ?? it.weaknesses
+        return { ...it, note, points_forts, points_faibles }
+      }
+      const quizSources = data?.quiz || data?.quizzes || data?.quizz || []
+      const exerciseSources = data?.exercises || data?.exercices || data?.exercice || []
+      setResults({
+        quiz: Array.isArray(quizSources) ? quizSources.map(normalizeNote) : [],
+        exercises: Array.isArray(exerciseSources) ? exerciseSources.map(normalizeNote) : []
+      })
     } catch (err) {
-      console.error('Erreur lors du chargement des résultats:', err)
       setError(err.message || 'Erreur lors du chargement des résultats')
     } finally {
       setLoading(false)
@@ -31,12 +42,10 @@ function FeedbacksViewSection() {
 
   const loadGlobalFeedback = async () => {
     try {
-      setError('')
       const data = await feedbackAPI.getGlobalFeedback()
       if (data.feedback) setGlobalFeedback(data.feedback)
     } catch (err) {
-      console.error('Erreur lors du chargement du feedback global:', err)
-      setError(err.message || 'Erreur lors du chargement du feedback global')
+      console.error('Erreur feedback global:', err)
     }
   }
 
@@ -46,202 +55,269 @@ function FeedbacksViewSection() {
       setError('')
       const data = await feedbackAPI.generateGlobalFeedback()
       setGlobalFeedback(data.feedback)
-      // Rafraîchir les résultats pour mettre à jour les statistiques
       await loadResults()
-      alert('Feedback global généré avec succès!')
     } catch (err) {
       setError(err.message || 'Erreur lors de la génération du feedback global')
-      alert('Erreur: ' + (err.message || 'Feedback global'))
     } finally {
       setGenerating(false)
     }
   }
 
-  if (loading) return (
-    <section className="dashboard-card feedbacks-section">
-      <div className="card-header">
-        <h2>📊 Résultats des Étudiants</h2>
-      </div>
-      <div className="card-content">
-        <p>Chargement...</p>
-      </div>
-    </section>
-  )
-
   const totalQuiz = results.quiz.length
   const totalExercises = results.exercises.length
-  const avgQuizScore = totalQuiz > 0 
-    ? (results.quiz.reduce((sum, q) => sum + (parseFloat(q.note) || 0), 0) / totalQuiz).toFixed(2)
-    : 0
+  const avgQuizScore = totalQuiz > 0
+    ? (results.quiz.reduce((s, q) => s + (parseFloat(q.note) || 0), 0) / totalQuiz).toFixed(1)
+    : '—'
   const avgExerciseScore = totalExercises > 0
-    ? (results.exercises.reduce((sum, e) => sum + (parseFloat(e.note) || 0), 0) / totalExercises).toFixed(2)
-    : 0
+    ? (results.exercises.reduce((s, e) => s + (parseFloat(e.note) || 0), 0) / totalExercises).toFixed(1)
+    : '—'
+
+  const getScoreColor = (val) => {
+    const n = parseFloat(val)
+    if (isNaN(n)) return ''
+    if (n >= 14) return 'fv-score-green'
+    if (n >= 10) return 'fv-score-blue'
+    return 'fv-score-orange'
+  }
 
   return (
-    <section className="dashboard-card feedbacks-section">
-      <div className="card-header">
-        <h2>📊 Résultats des Étudiants</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            className="btn btn-secondary btn-small" 
+    <div className="fv-wrap">
+
+      {/* ── Header ── */}
+      <div className="fv-header">
+        <div className="fv-header-left">
+          <div className="fv-header-icon">📊</div>
+          <div>
+            <h2 className="fv-title">Résultats des Étudiants</h2>
+            <p className="fv-subtitle">Vue d'ensemble des performances de la classe</p>
+          </div>
+        </div>
+        <div className="fv-header-actions">
+          <button
+            className="fv-btn fv-btn-ghost"
             onClick={loadResults}
             disabled={loading}
           >
-            🔄 Actualiser
+            {loading ? <span className="fv-spinner"></span> : '🔄'} Actualiser
           </button>
-          <button 
-            className="btn btn-primary btn-small" 
+          <button
+            className={`fv-btn fv-btn-gold ${generating ? 'fv-btn-loading' : ''}`}
             onClick={handleGenerateGlobalFeedback}
             disabled={generating}
           >
-            {generating ? 'Génération...' : 'Générer Feedback Global'}
+            {generating
+              ? <><span className="fv-spinner fv-spinner-dark"></span> Génération...</>
+              : '🤖 Feedback Global IA'}
           </button>
         </div>
       </div>
-      <div className="card-content">
-        {error && <p className="error">{error}</p>}
-        <div className="feedbacks-stats">
-          <div className="stat-item">
-            <span className="stat-number">{totalQuiz}</span>
-            <span className="stat-label">Quiz complétés</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">{avgQuizScore}</span>
-            <span className="stat-label">Moyenne Quiz (/20)</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">{totalExercises}</span>
-            <span className="stat-label">Exercices complétés</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">{avgExerciseScore}</span>
-            <span className="stat-label">Moyenne Exercices (/20)</span>
-          </div>
-        </div>
 
-        {globalFeedback && (
-          <div className="global-feedback expanded">
-            <h3>Feedback Global</h3>
-            {globalFeedback.points_faibles_globaux && (
-              <div className="feedback-section">
-                <h4>Points faibles globaux</h4>
-                <ul>
-                  {globalFeedback.points_faibles_globaux.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
+      {error && (
+        <div className="fv-error-banner">
+          <span>⚠️</span> {error}
+        </div>
+      )}
+
+      {/* ── Generating Overlay ── */}
+      {generating && (
+        <div className="fv-generating-bar">
+          <div className="fv-generating-fill"></div>
+        </div>
+      )}
+
+      {/* ── Stats Grid ── */}
+      {loading ? (
+        <div className="fv-loading">
+          <div className="fv-loader-ring"></div>
+          <p>Chargement des données<span className="fv-dots"></span></p>
+        </div>
+      ) : (
+        <>
+          <div className="fv-stats-grid">
+            <div className="fv-stat-card fv-stat-blue">
+              <div className="fv-stat-icon">📝</div>
+              <div className="fv-stat-value fv-font-mono">{totalQuiz}</div>
+              <div className="fv-stat-label">Quiz complétés</div>
+            </div>
+            <div className="fv-stat-card fv-stat-violet">
+              <div className="fv-stat-icon">📊</div>
+              <div className={`fv-stat-value fv-font-mono ${getScoreColor(avgQuizScore)}`}>{avgQuizScore}</div>
+              <div className="fv-stat-label">Moyenne Quiz /20</div>
+            </div>
+            <div className="fv-stat-card fv-stat-green">
+              <div className="fv-stat-icon">✏️</div>
+              <div className="fv-stat-value fv-font-mono">{totalExercises}</div>
+              <div className="fv-stat-label">Exercices complétés</div>
+            </div>
+            <div className="fv-stat-card fv-stat-gold">
+              <div className="fv-stat-icon">⭐</div>
+              <div className={`fv-stat-value fv-font-mono ${getScoreColor(avgExerciseScore)}`}>{avgExerciseScore}</div>
+              <div className="fv-stat-label">Moyenne Exercices /20</div>
+            </div>
+          </div>
+
+          {/* ── Global Feedback ── */}
+          {globalFeedback ? (
+            <div className="fv-global-section">
+              <div className="fv-section-label">
+                <span className="fv-section-dot fv-dot-gold"></span>
+                Feedback Global IA
               </div>
-            )}
-            {globalFeedback.erreurs_recurrentes && (
-              <div className="feedback-section">
-                <h4>Erreurs récurrentes</h4>
-                <ul>
-                  {globalFeedback.erreurs_recurrentes.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {globalFeedback.points_assimiles && (
-              <div className="feedback-section">
-                <h4>Points bien assimilés</h4>
-                <ul>
-                  {globalFeedback.points_assimiles.map((item, i) => (
-                    <li key={i}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {globalFeedback.statistiques && (
-              <div className="feedback-section">
-                <h4>Statistiques</h4>
-                <ul>
+
+              {/* Stats from feedback */}
+              {globalFeedback.statistiques && (
+                <div className="fv-inline-stats">
                   {typeof globalFeedback.statistiques.moyenne_generale !== 'undefined' && (
-                    <li>Moyenne générale : {globalFeedback.statistiques.moyenne_generale}</li>
+                    <div className="fv-inline-stat">
+                      <span className="fv-inline-stat-val fv-font-mono">
+                        {globalFeedback.statistiques.moyenne_generale}
+                      </span>
+                      <span className="fv-inline-stat-label">Moyenne générale</span>
+                    </div>
                   )}
                   {typeof globalFeedback.statistiques.taux_reussite !== 'undefined' && (
-                    <li>Taux de réussite : {globalFeedback.statistiques.taux_reussite}%</li>
+                    <div className="fv-inline-stat">
+                      <span className="fv-inline-stat-val fv-font-mono">
+                        {globalFeedback.statistiques.taux_reussite}%
+                      </span>
+                      <span className="fv-inline-stat-label">Taux de réussite</span>
+                    </div>
                   )}
-                </ul>
-              </div>
-            )}
-
-            {globalFeedback.eleves && (
-              <div className="feedback-section">
-                <div className="feedback-section-header">
-                  <h4>Détail par élève (quiz et exercices)</h4>
-                  <button className="btn btn-secondary btn-small" onClick={() => setShowStudents(v => !v)}>
-                    {showStudents ? 'Masquer les détails' : 'Voir détails'}
-                  </button>
                 </div>
-                {showStudents && (
-                  <div className="students-tables-stack">
-                    <div className="students-table">
-                      <div className="students-header">
-                        <span>Élève</span>
-                        <span>Note (Quiz)</span>
-                        <span>Forces</span>
-                        <span>Faiblesses</span>
-                      </div>
-                      {globalFeedback.eleves.map((e, idx) => (
-                        e.quizz ? (
-                          <div key={`${idx}-quiz`} className="students-row">
-                            <span>{e.nom}</span>
-                            <span className="score">{e.quizz.note ?? '—'}/20</span>
-                            <span className="mini-col">
-                              <ul>
-                                {(e.quizz.points_forts || []).map((p, i) => <li key={i}>{p}</li>)}
-                              </ul>
-                            </span>
-                            <span className="mini-col">
-                              <ul>
-                                {(e.quizz.points_faibles || []).map((p, i) => <li key={i}>{p}</li>)}
-                              </ul>
-                            </span>
-                          </div>
-                        ) : null
-                      ))}
-                    </div>
+              )}
 
-                    <div className="students-table">
-                      <div className="students-header">
-                        <span>Élève</span>
-                        <span>Note (Exercice)</span>
-                        <span>Forces</span>
-                        <span>Faiblesses</span>
-                      </div>
-                      {globalFeedback.eleves.map((e, idx) => (
-                        e.exercices ? (
-                          <div key={`${idx}-exo`} className="students-row">
-                            <span>{e.nom}</span>
-                            <span className="score">{e.exercices.note ?? '—'}/20</span>
-                            <span className="mini-col">
-                              <ul>
-                                {(e.exercices.points_forts || []).map((p, i) => <li key={i}>{p}</li>)}
-                              </ul>
-                            </span>
-                            <span className="mini-col">
-                              <ul>
-                                {(e.exercices.points_faibles || []).map((p, i) => <li key={i}>{p}</li>)}
-                              </ul>
-                            </span>
-                          </div>
-                        ) : null
+              {/* Feedback blocks */}
+              <div className="fv-feedback-grid">
+                {globalFeedback.points_assimiles && globalFeedback.points_assimiles.length > 0 && (
+                  <div className="fv-feedback-block fv-fb-green">
+                    <div className="fv-fb-icon">✓</div>
+                    <h4>Points bien assimilés</h4>
+                    <ul>
+                      {globalFeedback.points_assimiles.map((item, i) => (
+                        <li key={i}>{item}</li>
                       ))}
-                    </div>
+                    </ul>
+                  </div>
+                )}
+                {globalFeedback.points_faibles_globaux && globalFeedback.points_faibles_globaux.length > 0 && (
+                  <div className="fv-feedback-block fv-fb-red">
+                    <div className="fv-fb-icon">↓</div>
+                    <h4>Points faibles globaux</h4>
+                    <ul>
+                      {globalFeedback.points_faibles_globaux.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {globalFeedback.erreurs_recurrentes && globalFeedback.erreurs_recurrentes.length > 0 && (
+                  <div className="fv-feedback-block fv-fb-orange">
+                    <div className="fv-fb-icon">⚠</div>
+                    <h4>Erreurs récurrentes</h4>
+                    <ul>
+                      {globalFeedback.erreurs_recurrentes.map((item, i) => (
+                        <li key={i}>{item}</li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        )}
 
-      </div>
-    </section>
+              {/* Per-student detail */}
+              {globalFeedback.eleves && (
+                <div className="fv-students-section">
+                  <div className="fv-students-header">
+                    <div className="fv-section-label" style={{ margin: 0 }}>
+                      <span className="fv-section-dot fv-dot-blue"></span>
+                      Détail par étudiant
+                    </div>
+                    <button
+                      className="fv-btn fv-btn-ghost fv-btn-sm"
+                      onClick={() => setShowStudents(v => !v)}
+                    >
+                      {showStudents ? 'Masquer' : 'Voir les détails'}
+                    </button>
+                  </div>
+
+                  {showStudents && (
+                    <div className="fv-students-wrap">
+                      {/* Quiz table */}
+                      <div className="fv-table-label">Quiz</div>
+                      <div className="fv-table">
+                        <div className="fv-table-head">
+                          <span>Étudiant</span>
+                          <span>Note</span>
+                          <span>Points forts</span>
+                          <span>Points faibles</span>
+                        </div>
+                        {globalFeedback.eleves.map((e, idx) =>
+                          e.quizz ? (
+                            <div key={`${idx}-q`} className="fv-table-row">
+                              <span className="fv-table-name">{e.nom}</span>
+                              <span className={`fv-table-score fv-font-mono ${getScoreColor(e.quizz.note)}`}>
+                                {e.quizz.note ?? '—'}/20
+                              </span>
+                              <span className="fv-table-cell">
+                                {(e.quizz.points_forts || []).map((p, i) => (
+                                  <span key={i} className="fv-tag fv-tag-green">{p}</span>
+                                ))}
+                              </span>
+                              <span className="fv-table-cell">
+                                {(e.quizz.points_faibles || []).map((p, i) => (
+                                  <span key={i} className="fv-tag fv-tag-red">{p}</span>
+                                ))}
+                              </span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+
+                      {/* Exercises table */}
+                      <div className="fv-table-label" style={{ marginTop: '1.5rem' }}>Exercices</div>
+                      <div className="fv-table">
+                        <div className="fv-table-head">
+                          <span>Étudiant</span>
+                          <span>Note</span>
+                          <span>Points forts</span>
+                          <span>Points faibles</span>
+                        </div>
+                        {globalFeedback.eleves.map((e, idx) =>
+                          e.exercices ? (
+                            <div key={`${idx}-e`} className="fv-table-row">
+                              <span className="fv-table-name">{e.nom}</span>
+                              <span className={`fv-table-score fv-font-mono ${getScoreColor(e.exercices.note)}`}>
+                                {e.exercices.note ?? '—'}/20
+                              </span>
+                              <span className="fv-table-cell">
+                                {(e.exercices.points_forts || []).map((p, i) => (
+                                  <span key={i} className="fv-tag fv-tag-green">{p}</span>
+                                ))}
+                              </span>
+                              <span className="fv-table-cell">
+                                {(e.exercices.points_faibles || []).map((p, i) => (
+                                  <span key={i} className="fv-tag fv-tag-red">{p}</span>
+                                ))}
+                              </span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="fv-empty-feedback">
+              <div className="fv-empty-icon">🤖</div>
+              <p>Aucun feedback global généré pour le moment.</p>
+              <p className="fv-empty-sub">Cliquez sur "Feedback Global IA" pour analyser les résultats de la classe.</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
 export default FeedbacksViewSection
-
-
-

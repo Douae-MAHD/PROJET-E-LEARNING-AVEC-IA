@@ -98,7 +98,7 @@ function CoursesManagementSection() {
         <div className="course-list">
           {modules.length > 0 ? (
             modules.map((module) => (
-              <div key={module.id} className="course-item">
+              <div key={module._id} className="course-item">
                 <div className="course-info">
                   <h3>{module.titre}</h3>
                   {module.description && <p>{module.description}</p>}
@@ -106,7 +106,7 @@ function CoursesManagementSection() {
                 <div className="course-actions">
                   <button
                     className="btn btn-outline"
-                    onClick={() => handleAccessModule(module.id)}
+                    onClick={() => handleAccessModule(module._id)}
                   >
                     Gérer
                   </button>
