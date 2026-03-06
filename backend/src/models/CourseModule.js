@@ -15,13 +15,7 @@ const courseModuleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Le professeur est requis'],
-    },
-    studentEnrollments: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    }
   },
   {
     timestamps: true,

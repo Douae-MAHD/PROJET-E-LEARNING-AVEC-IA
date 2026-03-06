@@ -31,6 +31,13 @@ export const generateGlobal = asyncHandler(async (req, res) => {
   sendSuccess(res, result, 'Exercices générés', 201);
 });
 
+export const generateForSeance = asyncHandler(async (req, res) => {
+  const { seanceId } = req.params;
+  const etudiantId = req.user.id;
+  const result = await exercisesService.generateFromPDF(seanceId, etudiantId);
+  sendSuccess(res, result, 'Exercices générés', 201);
+});
+
 export const checkModuleExisting = asyncHandler(async (req, res) => {
   const { moduleId } = req.params;
   const etudiantId = req.user.id;

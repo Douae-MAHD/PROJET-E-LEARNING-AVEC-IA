@@ -1,6 +1,8 @@
 import CourseModule from '../models/CourseModule.js';
 import SubModule from '../models/SubModule.js';
 import PDF from '../models/PDF.js';
+import Seance from '../models/Seance.js';
+import ModuleEnrollment from '../models/ModuleEnrollment.js';
 import { DatabaseError } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
 
@@ -27,7 +29,8 @@ export const findByProfessor = async (profId) => {
 
 export const findByStudentEnrollment = async (studentId) => {
   try {
-    return await CourseModule.find({ studentEnrollments: studentId }).populate('professorId', 'nom email');
+    const moduleIds = await ModuleEnrollment.find({ etudiantId: studentId }).distinct('moduleId');
+    return await CourseModule.find({ _id: { $in: moduleIds } }).populate('professorId', 'nom email');
   } catch (error) {
     logger.error('Error finding modules by student enrollment', error, { studentId });
     throw new DatabaseError('Failed to retrieve modules');
@@ -57,7 +60,7 @@ export const createSubModule = async (data) => {
 
 export const findSubModules = async (parentModuleId) => {
   try {
-    return await SubModule.find({ parentModuleId, parentSubModuleId: null }).sort({ createdAt: 1 });
+    return await SubModule.find({ parentModuleId }).sort({ ordre: 1, createdAt: 1 });
   } catch (error) {
     logger.error('Error finding submodules', error, { parentModuleId });
     throw new DatabaseError('Failed to retrieve submodules');
@@ -66,13 +69,16 @@ export const findSubModules = async (parentModuleId) => {
 
 export const findSubModuleById = async (id) => {
   try {
-    const subModule = await SubModule.findById(id).populate('parentModuleId').populate('parentSubModuleId');
+    const subModule = await SubModule.findById(id).populate('parentModuleId');
 
     if (subModule) {
-      // Fetch PDFs for this submodule
-      const pdfs = await PDF.find({ subModuleId: id });
+      const seances = await Seance.find({ subModuleId: id }).sort({ ordre: 1 }).lean();
+      const seanceIds = seances.map((seance) => seance._id);
+      const pdfs = await PDF.find({ seanceId: { $in: seanceIds } }).sort({ createdAt: -1 }).lean();
+
       // Convert to plain object and add pdfs array
       const subModuleObj = subModule.toObject ? subModule.toObject() : subModule;
+      subModuleObj.seances = seances;
       subModuleObj.pdfs = pdfs;
       return subModuleObj;
     }

@@ -27,6 +27,10 @@ const subModuleIdParamSchema = Joi.object({
   subModuleId: Joi.string().pattern(objectIdRegex).required()
 });
 
+const seanceIdParamSchema = Joi.object({
+  seanceId: Joi.string().pattern(objectIdRegex).required()
+});
+
 const pdfIdParamSchema = Joi.object({
   pdfId: Joi.string().pattern(objectIdRegex).required()
 });
@@ -43,8 +47,28 @@ const quizSubmitSchema = Joi.object({
     .required()
 });
 
+const quizCreateSchema = Joi.object({
+  seanceId: Joi.string().pattern(objectIdRegex).optional().messages({
+    'string.pattern.base': 'seanceId doit être un identifiant valide',
+  }),
+  moduleId: Joi.string().pattern(objectIdRegex).optional().messages({
+    'string.pattern.base': 'moduleId doit être un identifiant valide',
+  }),
+  etudiantId: Joi.string().pattern(objectIdRegex).required().messages({
+    'any.required': 'L\'identifiant étudiant est requis',
+    'string.pattern.base': 'etudiantId doit être un identifiant valide',
+  }),
+  typeQuiz: Joi.string().valid('seance', 'global').default('seance').messages({
+    'any.only': 'typeQuiz doit être seance ou global',
+  }),
+  questions: Joi.array().optional(),
+  reponsesEtudiant: Joi.array().optional(),
+});
+
 export const validateQuizSubmit = validate(quizSubmitSchema);
+export const validateQuizCreate = validate(quizCreateSchema);
 export const validateQuizIdParam = validateParams(quizIdParamSchema);
 export const validateModuleIdParam = validateParams(moduleIdParamSchema);
 export const validateSubModuleIdParam = validateParams(subModuleIdParamSchema);
+export const validateSeanceIdParam = validateParams(seanceIdParamSchema);
 export const validatePdfIdParam = validateParams(pdfIdParamSchema);

@@ -12,17 +12,17 @@ import { sendSuccess } from '../utils/responseFormatter.js';
 // Upload handler
 export const uploadPdf = asyncHandler(async (req, res) => {
   try {
-    const { sub_module_id } = req.body;
+    const seanceIdRaw = req.body?.seance_id || req.body?.seanceId;
 
     if (!req.file) throw new ValidationError('Aucun fichier PDF fourni', 'pdf');
-    if (!sub_module_id) throw new ValidationError('ID du cours requis', 'sub_module_id');
-    if (!mongoose.Types.ObjectId.isValid(sub_module_id)) throw new ValidationError('ID sous-module invalide', 'sub_module_id');
+    if (!seanceIdRaw) throw new ValidationError('ID de séance requis', 'seance_id');
+    if (!mongoose.Types.ObjectId.isValid(seanceIdRaw)) throw new ValidationError('ID séance invalide', 'seance_id');
 
     const data = {
       nomFichier: req.file.originalname,
       cheminFichier: req.file.path,
       tailleFichier: req.file.size,
-      subModuleId: new mongoose.Types.ObjectId(sub_module_id),
+      seanceId: new mongoose.Types.ObjectId(seanceIdRaw),
     };
 
     const saved = await pdfService.createPdf(data);
@@ -32,7 +32,7 @@ export const uploadPdf = asyncHandler(async (req, res) => {
       nomFichier: saved.nomFichier,
       cheminFichier: saved.cheminFichier,
       tailleFichier: saved.tailleFichier,
-      subModuleId: saved.subModuleId
+      seanceId: saved.seanceId
     }, 'PDF uploadé avec succès', 201);
   } catch (error) {
     throw error;

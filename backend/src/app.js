@@ -8,6 +8,7 @@ import path from 'path';
 import config from './config/env.js';
 import { setupSwagger } from './config/swagger.js';
 import apiRoutes from './routes/index.js';
+import seanceRoutes from './routes/seance.routes.js';
 import { generalErrorHandler, notFound } from './utils/errorHandler.js';
 
 const app = express();
@@ -62,13 +63,14 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Static files
-app.use('/uploads', express.static(path.join(process.cwd(), 'backend', 'uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'backend', 'src', 'uploads')));
 
 // Swagger docs
 setupSwagger(app);
 
 // API routes
 app.use('/api', apiRoutes);
+app.use('/api/seances', seanceRoutes);
 
 // 404 handler
 app.use(notFound);

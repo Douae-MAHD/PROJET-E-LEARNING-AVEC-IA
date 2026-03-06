@@ -23,6 +23,7 @@ import {
   validateQuizIdParam,
   validateModuleIdParam,
   validateSubModuleIdParam,
+  validateSeanceIdParam,
   validatePdfIdParam
 } from '../validators/quiz.validator.js';
 
@@ -66,6 +67,16 @@ router.post(
   requireRole(['etudiant']),
   validateSubModuleIdParam,
   quizController.generateFromSubModule
+);
+
+// Generate quiz from seance
+router.post(
+  '/generate/seance/:seanceId',
+  aiGenerationLimiter,
+  authenticateToken,
+  requireRole(['etudiant']),
+  validateSeanceIdParam,
+  quizController.generateFromSeance
 );
 
 // Generate quiz from entire module

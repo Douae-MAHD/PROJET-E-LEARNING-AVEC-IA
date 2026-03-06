@@ -11,11 +11,20 @@ export const findById = async (id) => {
 	}
 };
 
-export const findBySubModule = async (subModuleId) => {
+export const findBySeance = async (seanceId) => {
 	try {
-		return await PDF.find({ subModuleId }).sort({ createdAt: -1 });
+		return await PDF.find({ seanceId }).sort({ createdAt: -1 });
 	} catch (error) {
-		logger.error('Error finding PDFs by subModule', error, { subModuleId });
+		logger.error('Error finding PDF by seance', error, { seanceId });
+		throw new DatabaseError('Failed to retrieve PDFs');
+	}
+};
+
+export const findBySeanceIds = async (seanceIds = []) => {
+	try {
+		return await PDF.find({ seanceId: { $in: seanceIds } }).sort({ createdAt: -1 });
+	} catch (error) {
+		logger.error('Error finding PDFs by seances', error, { count: seanceIds.length });
 		throw new DatabaseError('Failed to retrieve PDFs');
 	}
 };

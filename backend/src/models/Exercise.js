@@ -2,20 +2,23 @@ import mongoose from 'mongoose';
 
 const exerciseSchema = new mongoose.Schema(
   {
-    pdfId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'PDF',
-      default: null,
-    },
     moduleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CourseModule',
       default: null,
     },
-    subModuleId: {
+    seanceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'SubModule',
+      ref: 'Seance',
       default: null,
+    },
+    typeExercice: {
+      type: String,
+      enum: {
+        values: ['seance', 'global', 'prelab'],
+        message: 'Le type d\'exercice doit être seance, global ou prelab',
+      },
+      default: 'seance',
     },
     etudiantId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +61,25 @@ const exerciseSchema = new mongoose.Schema(
     points_amelioration: [{
       type: String,
     }],
+    scoreParPilier: {
+      // TODO: CT
+      decomposition: {
+        type: Number,
+        default: null,
+      },
+      pattern: {
+        type: Number,
+        default: null,
+      },
+      abstraction: {
+        type: Number,
+        default: null,
+      },
+      algorithme: {
+        type: Number,
+        default: null,
+      },
+    },
     dateCompletion: {
       type: Date,
       default: null,
@@ -79,8 +101,8 @@ const exerciseSchema = new mongoose.Schema(
 // Create indexes
 exerciseSchema.index({ etudiantId: 1 });
 exerciseSchema.index({ moduleId: 1 });
-exerciseSchema.index({ subModuleId: 1 });
-exerciseSchema.index({ pdfId: 1 });
+exerciseSchema.index({ seanceId: 1 });
+exerciseSchema.index({ typeExercice: 1 });
 exerciseSchema.index({ dateCompletion: 1 });
 exerciseSchema.index({ submittedAt: 1 });
 exerciseSchema.index({ isSubmitted: 1 });

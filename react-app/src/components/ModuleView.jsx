@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { modulesAPI, pdfsAPI, quizAPI, exercisesAPI } from '../services/api'
+import { modulesAPI, seancesAPI, pdfsAPI, quizAPI, exercisesAPI } from '../services/api'
 import './ModuleView.css'
 
 function ModuleView() {
@@ -8,6 +8,8 @@ function ModuleView() {
   const navigate = useNavigate()
   const [module, setModule] = useState(null)
   const [selectedSubModule, setSelectedSubModule] = useState(null)
+  const [seances, setSeances] = useState([])
+  const [selectedSeanceId, setSelectedSeanceId] = useState('')
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(null) // store key of what's generating
   const [error, setError] = useState('')
@@ -16,6 +18,8 @@ function ModuleView() {
   useEffect(() => {
     loadModule()
   }, [moduleId])
+
+  const getSelectedSeance = () => seances.find(s => s._id === selectedSeanceId) || null
 
   const loadModule = async () => {
     try {
@@ -33,6 +37,13 @@ function ModuleView() {
     try {
       const data = await modulesAPI.getSubModule(subModuleId)
       setSelectedSubModule(data)
+      setSelectedSeanceId('')
+
+      const seancesData = await seancesAPI.getBySubModule(subModuleId)
+      const sortedSeances = (Array.isArray(seancesData) ? seancesData : [])
+        .slice()
+        .sort((a, b) => (a?.ordre ?? Number.MAX_SAFE_INTEGER) - (b?.ordre ?? Number.MAX_SAFE_INTEGER))
+      setSeances(sortedSeances)
     } catch (err) {
       setError(err.message)
     }
@@ -47,15 +58,18 @@ function ModuleView() {
     }
   }
 
-  const handleGenerateQuiz = async (pdfId) => {
+  const handleGenerateQuiz = async (itemKey) => {
     try {
+      if (!selectedSeanceId) {
+        throw new Error('Aucune séance liée à ce contenu')
+      }
       setError('')
-      setGenerating(`pdf-quiz-${pdfId}`)
-      const response = await quizAPI.generate(pdfId)
+      setGenerating(`pdf-quiz-${itemKey}`)
+      const response = await quizAPI.generate(selectedSeanceId)
       const quiz = response?.quiz || response
-      const { _id, isExisting } = response
+      const { _id, isExisting, isSubmitted } = response
       if (!quiz || !_id) throw new Error('Impossible de récupérer l\'ID du quiz généré')
-      if (isExisting) {
+      if (isExisting && isSubmitted) {
         navigate(`/quiz/${_id}?showFeedbackOnly=true`)
       } else {
         navigate(`/quiz/${_id}`)
@@ -68,11 +82,14 @@ function ModuleView() {
     }
   }
 
-  const handleGenerateExercises = async (pdfId) => {
+  const handleGenerateExercises = async (itemKey) => {
     try {
+      if (!selectedSeanceId) {
+        throw new Error('Aucune séance liée à ce contenu')
+      }
       setError('')
-      setGenerating(`pdf-ex-${pdfId}`)
-      const response = await exercisesAPI.generate(pdfId)
+      setGenerating(`pdf-ex-${itemKey}`)
+      const response = await exercisesAPI.generate(selectedSeanceId)
       const exercises = Array.isArray(response) ? response : (response?.exercises || [])
       if (!exercises || exercises.length === 0) throw new Error('Aucun exercice n\'a pu être généré')
       const firstExerciseId = exercises[0]._id || exercises[0].id
@@ -85,13 +102,16 @@ function ModuleView() {
     }
   }
 
-  const handleGenerateQuizForCourse = async (subModuleId) => {
+  const handleGenerateQuizForSeance = async () => {
     try {
+      if (!selectedSeanceId) {
+        throw new Error('Aucune séance disponible pour ce cours')
+      }
       setError('')
-      setGenerating(`course-quiz-${subModuleId}`)
-      const response = await quizAPI.generateForCourse(subModuleId)
-      const { _id, isExisting } = response
-      if (isExisting) {
+      setGenerating(`course-quiz-${selectedSeanceId}`)
+      const response = await quizAPI.generateForSeance(selectedSeanceId)
+      const { _id, isExisting, isSubmitted } = response
+      if (isExisting && isSubmitted) {
         navigate(`/quiz/${_id}?showFeedbackOnly=true`)
       } else {
         navigate(`/quiz/${_id}`)
@@ -104,11 +124,14 @@ function ModuleView() {
     }
   }
 
-  const handleGenerateExercisesForCourse = async (subModuleId) => {
+  const handleGenerateExercisesForSeance = async () => {
     try {
+      if (!selectedSeanceId) {
+        throw new Error('Aucune séance disponible pour ce cours')
+      }
       setError('')
-      setGenerating(`course-ex-${subModuleId}`)
-      const response = await exercisesAPI.generateForCourse(subModuleId)
+      setGenerating(`course-ex-${selectedSeanceId}`)
+      const response = await exercisesAPI.generateForSeance(selectedSeanceId)
       const exercises = Array.isArray(response) ? response : (response?.exercises || [])
       if (!exercises || exercises.length === 0) throw new Error('Aucun exercice n\'a pu être généré')
       const firstExerciseId = exercises[0]._id || exercises[0].id
@@ -209,8 +232,9 @@ function ModuleView() {
   // ─── SUB-MODULE DETAIL VIEW ─────────────────────────────────────────────────
   if (selectedSubModule) {
     const courseKey = selectedSubModule._id
-    const isGenCourseQuiz = generating === `course-quiz-${courseKey}`
-    const isGenCourseEx = generating === `course-ex-${courseKey}`
+    const selectedSeance = getSelectedSeance()
+    const isGenCourseQuiz = generating === `course-quiz-${selectedSeanceId}`
+    const isGenCourseEx = generating === `course-ex-${selectedSeanceId}`
 
     return (
       <div className="mv-wrap">
@@ -240,6 +264,32 @@ function ModuleView() {
             </div>
           </div>
 
+          {/* Séance selector */}
+          <div className="mv-seance-picker">
+            <label htmlFor="mv-seance-select" className="mv-seance-label">Séance de travail</label>
+            <select
+              id="mv-seance-select"
+              className="mv-seance-select"
+              value={selectedSeanceId}
+              onChange={(e) => setSelectedSeanceId(e.target.value)}
+            >
+              <option value="">Sélectionnez une séance</option>
+              {seances.map((seance) => (
+                <option key={seance._id} value={seance._id}>
+                  {`Séance ${seance.ordre ?? '-'} — ${seance.titre}`}
+                </option>
+              ))}
+            </select>
+            <div className="mv-seance-current">
+              {selectedSeance
+                ? `Séance sélectionnée : ${selectedSeance.titre} (ordre ${selectedSeance.ordre ?? '-'})`
+                : 'Aucune séance sélectionnée'}
+            </div>
+            {seances.length === 0 && (
+              <div className="mv-seance-empty">Aucune séance disponible pour ce cours.</div>
+            )}
+          </div>
+
           {/* Course-level Generation */}
           {selectedSubModule.pdfs && selectedSubModule.pdfs.length > 0 && (
             <div className="mv-global-banner">
@@ -253,15 +303,15 @@ function ModuleView() {
               <div className="mv-global-buttons">
                 <button
                   className={`mv-btn mv-btn-outline-blue ${isGenCourseQuiz ? 'mv-btn-loading' : ''}`}
-                  onClick={() => handleGenerateQuizForCourse(courseKey)}
-                  disabled={isGenerating}
+                  onClick={handleGenerateQuizForSeance}
+                  disabled={isGenerating || !selectedSeanceId}
                 >
                   {isGenCourseQuiz ? <><span className="mv-spinner"></span> Génération...</> : '📝 Quiz du Cours'}
                 </button>
                 <button
                   className={`mv-btn mv-btn-outline-violet ${isGenCourseEx ? 'mv-btn-loading' : ''}`}
-                  onClick={() => handleGenerateExercisesForCourse(courseKey)}
-                  disabled={isGenerating}
+                  onClick={handleGenerateExercisesForSeance}
+                  disabled={isGenerating || !selectedSeanceId}
                 >
                   {isGenCourseEx ? <><span className="mv-spinner"></span> Génération...</> : '✏️ Exercices du Cours'}
                 </button>
@@ -307,14 +357,14 @@ function ModuleView() {
                         <button
                           className={`mv-btn mv-btn-outline-blue mv-btn-sm ${isGenPdfQuiz ? 'mv-btn-loading' : ''}`}
                           onClick={() => handleGenerateQuiz(pdfKey)}
-                          disabled={isGenerating}
+                          disabled={isGenerating || !selectedSeanceId}
                         >
                           {isGenPdfQuiz ? <span className="mv-spinner mv-spinner-sm"></span> : '📝 Quiz PDF'}
                         </button>
                         <button
                           className={`mv-btn mv-btn-outline-violet mv-btn-sm ${isGenPdfEx ? 'mv-btn-loading' : ''}`}
                           onClick={() => handleGenerateExercises(pdfKey)}
-                          disabled={isGenerating}
+                          disabled={isGenerating || !selectedSeanceId}
                         >
                           {isGenPdfEx ? <span className="mv-spinner mv-spinner-sm"></span> : '✏️ Exercices'}
                         </button>

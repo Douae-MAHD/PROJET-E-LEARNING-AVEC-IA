@@ -237,6 +237,44 @@
   flex-wrap: wrap;
 }
 
+.mv-seance-picker {
+  background: var(--mv-card);
+  border: 1px solid var(--mv-card-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.mv-seance-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--mv-muted);
+  margin-bottom: 0.5rem;
+}
+
+.mv-seance-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--mv-card-border);
+  color: var(--mv-text);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font-family: var(--mv-font-sans);
+  outline: none;
+}
+
+.mv-seance-current {
+  margin-top: 0.6rem;
+  font-size: 0.82rem;
+  color: var(--mv-text);
+}
+
+.mv-seance-empty {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+  color: #fca5a5;
+}
+
 /* ── Section ── */
 .mv-section {
   margin-top: 0.5rem;

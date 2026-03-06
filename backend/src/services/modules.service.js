@@ -1,11 +1,12 @@
 import * as repo from '../repositories/modules.repository.js';
 import mongoose from 'mongoose';
 import CourseModule from '../models/CourseModule.js';
+import ModuleEnrollment from '../models/ModuleEnrollment.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errorHandler.js';
 
 export const createModule = async ({ titre, description, professorId }) => {
   if (!titre) throw new ValidationError('Titre requis', 'titre');
-  const data = { titre, description: description || null, professorId: new mongoose.Types.ObjectId(professorId), studentEnrollments: [] };
+  const data = { titre, description: description || null, professorId: new mongoose.Types.ObjectId(professorId) };
   return repo.createModule(data);
 };
 
@@ -24,9 +25,10 @@ export const getModule = async (id, userId = null, userRole = null) => {
 
   if (userRole === 'etudiant') {
     if (!userId) throw new ValidationError('Identifiant étudiant requis', 'userId');
-    const isEnrolled = (module.studentEnrollments || []).some(
-      (studentId) => studentId?.toString() === userId.toString()
-    );
+    const isEnrolled = await ModuleEnrollment.exists({
+      moduleId: module._id,
+      etudiantId: userId,
+    });
     if (!isEnrolled) throw new ForbiddenError('Accès interdit');
   }
 
@@ -41,7 +43,7 @@ export const getModule = async (id, userId = null, userRole = null) => {
   return module;
 };
 
-export const createSubModule = async ({ moduleId, titre, description, parentSubModuleId, professorId }) => {
+export const createSubModule = async ({ moduleId, titre, description, professorId }) => {
   if (!mongoose.Types.ObjectId.isValid(moduleId)) {
     throw new ValidationError('Identifiant module invalide', 'moduleId');
   }
@@ -59,8 +61,7 @@ export const createSubModule = async ({ moduleId, titre, description, parentSubM
   const data = {
     titre,
     description: description || null,
-    parentModuleId: new mongoose.Types.ObjectId(moduleId),
-    parentSubModuleId: parentSubModuleId ? new mongoose.Types.ObjectId(parentSubModuleId) : null
+    parentModuleId: new mongoose.Types.ObjectId(moduleId)
   };
   return repo.createSubModule(data);
 };

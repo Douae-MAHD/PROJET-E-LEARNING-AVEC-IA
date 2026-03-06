@@ -11,12 +11,24 @@ const handleUnauthorized = () => {
 
 const apiFetch = async (url, options = {}) => {
   const token = localStorage.getItem('token');
+  const isFormData = options.body instanceof FormData;
+  const customHeaders = {
+    ...(options?.headers || {})
+  };
+
+  if (isFormData) {
+    delete customHeaders['Content-Type'];
+    delete customHeaders['content-type'];
+  }
+
   const response = await fetch(url, {
     ...options,
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
-      'Content-Type': 'application/json',
-      ...options?.headers
+      ...(!isFormData && !customHeaders['Content-Type'] && !customHeaders['content-type']
+        ? { 'Content-Type': 'application/json' }
+        : {}),
+      ...customHeaders
     }
   });
 
@@ -123,18 +135,72 @@ export const modulesAPI = {
   getSubModule: (id) => request(`/modules/submodules/${id}`)
 };
 
+// Submodules
+export const submodulesAPI = {
+  getByModule: (moduleId) => request(`/modules/${moduleId}/submodules`),
+
+  getById: (id) => request(`/submodules/${id}`),
+
+  create: (subModuleData) => request('/submodules', {
+    method: 'POST',
+    body: subModuleData
+  }),
+
+  update: (id, subModuleData) => request(`/submodules/${id}`, {
+    method: 'PUT',
+    body: subModuleData
+  }),
+
+  delete: (id) => request(`/submodules/${id}`, {
+    method: 'DELETE'
+  })
+};
+
+// Séances
+export const seancesAPI = {
+  getBySubModule: (subModuleId) => request(`/seances/submodule/${subModuleId}`),
+
+  getById: (id) => request(`/seances/${id}`),
+
+  create: (seanceData) => request('/seances', {
+    method: 'POST',
+    body: seanceData
+  }),
+
+  update: (id, seanceData) => request(`/seances/${id}`, {
+    method: 'PUT',
+    body: seanceData
+  }),
+
+  delete: (id) => request(`/seances/${id}`, {
+    method: 'DELETE'
+  })
+};
+
 // PDFs
 export const pdfsAPI = {
-  upload: (subModuleId, file) => {
+  upload: async (seanceId, file) => {
     const formData = new FormData();
     formData.append('pdf', file);
-    formData.append('sub_module_id', subModuleId);
+    formData.append('seance_id', seanceId);
 
-    return apiFetch(`${API_BASE_URL}/pdfs/upload`, {
+    const response = await apiFetch(`${API_BASE_URL}/pdfs/upload`, {
       method: 'POST',
       headers: {},
       body: formData
-    }).then(res => res.json());
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    const payload = contentType.includes('application/json')
+      ? await response.json()
+      : { message: await response.text() };
+
+    if (!response.ok) {
+      const message = payload?.error?.message || payload?.error || payload?.message || 'Erreur lors de l\'upload du PDF';
+      throw new Error(message);
+    }
+
+    return payload?.data !== undefined ? payload.data : payload;
   },
   
   getById: (id) => request(`/pdfs/${id}`),
@@ -185,11 +251,11 @@ export const pdfsAPI = {
 export const quizAPI = {
   checkModuleExisting: (moduleId) => request(`/quiz/check/module/${moduleId}`),
 
-  generate: (pdfId) => request(`/quiz/generate/${pdfId}`, {
+  generate: (seanceId) => request(`/quiz/generate/seance/${seanceId}`, {
     method: 'POST'
   }),
   
-  generateForCourse: (subModuleId) => request(`/quiz/generate/cours/${subModuleId}`, {
+  generateForSeance: (seanceId) => request(`/quiz/generate/seance/${seanceId}`, {
     method: 'POST'
   }),
   
@@ -211,11 +277,11 @@ export const quizAPI = {
 export const exercisesAPI = {
   checkModuleExisting: (moduleId) => request(`/exercises/check/module/${moduleId}`),
 
-  generate: (pdfId) => request(`/exercises/generate/${pdfId}`, {
+  generate: (seanceId) => request(`/exercises/generate/seance/${seanceId}`, {
     method: 'POST'
   }),
   
-  generateForCourse: (subModuleId) => request(`/exercises/generate/cours/${subModuleId}`, {
+  generateForSeance: (seanceId) => request(`/exercises/generate/seance/${seanceId}`, {
     method: 'POST'
   }),
   
@@ -236,6 +302,10 @@ export const exercisesAPI = {
 // Feedback
 export const feedbackAPI = {
   getStudentFeedbacks: () => request('/feedback/student'),
+
+  getSeanceFeedback: (seanceId) => request(`/feedback/seance/${seanceId}/student`),
+
+  getTeacherSeanceFeedback: (seanceId) => request(`/feedback/seance/${seanceId}/teacher`),
   
   getModuleFeedback: (moduleId) => request(`/feedback/module/${moduleId}/student`),
 

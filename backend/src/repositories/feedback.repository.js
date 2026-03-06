@@ -43,7 +43,7 @@ export class FeedbackRepository {
     try {
       const feedback = await Feedback.findById(feedbackId)
         .populate('etudiantId', 'nom prenom email')
-        .populate('quizId', 'note moduleId pdfId isSubmitted')
+        .populate('quizId', 'note moduleId seanceId isSubmitted')
         .populate('exerciseId', 'enonce');
       
       return feedback;
@@ -149,6 +149,24 @@ export class FeedbackRepository {
       return { feedbacks, total };
     } catch (error) {
       logger.error('Error finding feedback by module', error, { moduleId });
+      throw new DatabaseError('Failed to retrieve feedback');
+    }
+  }
+
+  async findBySeance(seanceId) {
+    try {
+      return await Feedback.find({ seanceId }).lean();
+    } catch (error) {
+      logger.error('Error finding feedback by seance', error, { seanceId });
+      throw new DatabaseError('Failed to retrieve feedback');
+    }
+  }
+
+  async findGlobalByModule(moduleId) {
+    try {
+      return await Feedback.find({ moduleId, typeFeedback: 'module' }).lean();
+    } catch (error) {
+      logger.error('Error finding global module feedback', error, { moduleId });
       throw new DatabaseError('Failed to retrieve feedback');
     }
   }

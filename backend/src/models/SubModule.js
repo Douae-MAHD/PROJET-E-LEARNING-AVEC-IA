@@ -14,11 +14,10 @@ const subModuleSchema = new mongoose.Schema(
     parentModuleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CourseModule',
-      default: null,
+      required: [true, 'Le module parent est requis'],
     },
-    parentSubModuleId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'SubModule',
+    ordre: {
+      type: Number,
       default: null,
     },
   },
@@ -29,6 +28,6 @@ const subModuleSchema = new mongoose.Schema(
 
 // Create indexes
 subModuleSchema.index({ parentModuleId: 1 });
-subModuleSchema.index({ parentSubModuleId: 1 });
+subModuleSchema.index({ parentModuleId: 1, ordre: 1 });
 
 export default mongoose.model('SubModule', subModuleSchema, 'submodules');

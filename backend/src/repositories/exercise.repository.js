@@ -43,7 +43,7 @@ export class ExerciseRepository {
   async findById(exerciseId) {
     try {
       const exercise = await Exercise.findById(exerciseId)
-        .populate('pdfId', 'nomFichier cheminFichier')
+        .populate('seanceId', 'titre ordre')
         .populate('moduleId', 'titre')
         .populate('etudiantId', 'nom prenom email');
       
@@ -54,19 +54,20 @@ export class ExerciseRepository {
     }
   }
 
-  /**
-   * Find exercises by PDF and Student
-   */
-  async findByPdfAndStudent(pdfId, etudiantId) {
+  async findBySeance(seanceId) {
     try {
-      const exercises = await Exercise.find({
-        pdfId,
-        etudiantId
-      }).populate('pdfId', 'nomFichier');
-      
-      return exercises;
+      return await Exercise.find({ seanceId }).lean();
     } catch (error) {
-      logger.error('Error finding exercises by PDF and student', error, { pdfId, etudiantId });
+      logger.error('Error finding exercises by seance', error, { seanceId });
+      throw new DatabaseError('Failed to retrieve exercises');
+    }
+  }
+
+  async findGlobalByModule(moduleId) {
+    try {
+      return await Exercise.find({ moduleId, typeExercice: 'global' }).lean();
+    } catch (error) {
+      logger.error('Error finding global exercises by module', error, { moduleId });
       throw new DatabaseError('Failed to retrieve exercises');
     }
   }
@@ -88,7 +89,7 @@ export class ExerciseRepository {
       }
 
       const exercises = await Exercise.find(query)
-        .populate('pdfId', 'nomFichier')
+        .populate('seanceId', 'titre ordre')
         .populate('moduleId', 'titre')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -113,7 +114,7 @@ export class ExerciseRepository {
 
       const exercises = await Exercise.find({ moduleId })
         .populate('etudiantId', 'nom prenom email')
-        .populate('pdfId', 'nomFichier')
+        .populate('seanceId', 'titre ordre')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);

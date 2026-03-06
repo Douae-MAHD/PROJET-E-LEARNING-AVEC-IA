@@ -8,6 +8,9 @@ const router = express.Router();
 // Upload a PDF
 router.post('/upload', authenticateToken, requireRole(['professeur']), upload.single('pdf'), pdfController.uploadPdf);
 
+// List PDFs by submodule
+router.get('/submodule/:subModuleId', authenticateToken, pdfController.listBySubModule);
+
 // Get PDF metadata
 router.get('/:id', authenticateToken, pdfController.getPdf);
 
@@ -16,8 +19,5 @@ router.get('/:id/download', authenticateToken, pdfController.downloadPdf);
 
 // Delete PDF
 router.delete('/:id', authenticateToken, requireRole(['professeur']), pdfController.deletePdf);
-
-// List PDFs by submodule
-router.get('/submodule/:subModuleId', authenticateToken, pdfController.listBySubModule);
 
 export default router;

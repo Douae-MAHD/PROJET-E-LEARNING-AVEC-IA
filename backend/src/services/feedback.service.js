@@ -5,27 +5,58 @@
 
 import Quiz from '../models/Quiz.js';
 import Exercise from '../models/Exercise.js';
+import Feedback from '../models/Feedback.js';
 import CourseModule from '../models/CourseModule.js';
 import SubModule from '../models/SubModule.js';
-import PDF from '../models/PDF.js';
+import Seance from '../models/Seance.js';
 import logger from '../utils/logger.js';
+import { ValidationError } from '../utils/errorHandler.js';
+
+export const createFeedback = async (data) => {
+  const {
+    etudiantId,
+    quizId = null,
+    exerciseId = null,
+    seanceId = null,
+    moduleId = null,
+    feedbackTexte,
+    typeFeedback,
+    recommandations = [],
+  } = data;
+
+  if (typeFeedback === 'seance' && !seanceId) {
+    throw new ValidationError('seanceId est requis pour un feedback de séance');
+  }
+  if (typeFeedback === 'module' && !moduleId) {
+    throw new ValidationError('moduleId est requis pour un feedback de module');
+  }
+  if (typeFeedback === 'quiz' && !quizId) {
+    throw new ValidationError('quizId est requis pour un feedback de quiz');
+  }
+  if (typeFeedback === 'exercice' && !exerciseId) {
+    throw new ValidationError('exerciseId est requis pour un feedback d\'exercice');
+  }
+
+  return Feedback.create({
+    etudiantId,
+    quizId,
+    exerciseId,
+    seanceId,
+    moduleId,
+    feedbackTexte,
+    typeFeedback,
+    recommandations,
+  });
+};
 
 // ─────────────────────────────────────────────────────────────
 // HELPER : Construit un titre lisible pour un quiz
-// Priorité : subModule.nom > PDF.nomFichier > fallback
+// Priorité : seance.titre > module.titre > fallback
 // ─────────────────────────────────────────────────────────────
 const buildQuizTitle = (quiz) => {
-  // Quiz généré depuis un sous-module (cours)
-  // ✅ FIX : SubModule.titre (pas .nom — cf. schéma)
-  if (quiz.subModuleId?.titre) {
-    return `Quiz — Cours "${quiz.subModuleId.titre}"`
+  if (quiz.seanceId?.titre) {
+    return `Quiz — Séance "${quiz.seanceId.titre}"`
   }
-  // Quiz généré depuis un PDF
-  if (quiz.pdfId?.nomFichier) {
-    const name = quiz.pdfId.nomFichier.replace(/\.[^/.]+$/, '')
-    return `Quiz — ${name}`
-  }
-  // Quiz généré depuis le module global
   if (quiz.moduleId?.titre) {
     return `Quiz Global — ${quiz.moduleId.titre}`
   }
@@ -36,13 +67,8 @@ const buildQuizTitle = (quiz) => {
 // HELPER : Construit un titre lisible pour un exercice
 // ─────────────────────────────────────────────────────────────
 const buildExerciseTitle = (exercise) => {
-  // ✅ FIX : SubModule.titre (pas .nom — cf. schéma)
-  if (exercise.subModuleId?.titre) {
-    return `Exercice — Cours "${exercise.subModuleId.titre}"`
-  }
-  if (exercise.pdfId?.nomFichier) {
-    const name = exercise.pdfId.nomFichier.replace(/\.[^/.]+$/, '')
-    return `Exercice — ${name}`
+  if (exercise.seanceId?.titre) {
+    return `Exercice — Séance "${exercise.seanceId.titre}"`
   }
   if (exercise.moduleId?.titre) {
     return `Exercice Global — ${exercise.moduleId.titre}`
@@ -137,8 +163,7 @@ export const getStudentFeedback = async (studentId, moduleId) => {
       moduleId,
       note: { $exists: true, $ne: null }
     })
-      .populate('pdfId', 'nomFichier')           // pour titre depuis PDF
-      .populate('subModuleId', 'titre')           // ✅ FIX : titre (pas nom)
+      .populate('seanceId', 'titre ordre')
       .populate('moduleId', 'titre')              // pour titre global
       .lean()
 
@@ -148,8 +173,7 @@ export const getStudentFeedback = async (studentId, moduleId) => {
       moduleId,
       note: { $exists: true, $ne: null }
     })
-      .populate('pdfId', 'nomFichier')
-      .populate('subModuleId', 'titre')           // ✅ FIX : titre (pas nom)
+      .populate('seanceId', 'titre ordre')
       .populate('moduleId', 'titre')
       .lean()
 
@@ -186,8 +210,7 @@ export const getStudentFeedback = async (studentId, moduleId) => {
       })),
 
       // Métadonnées utiles
-      subModuleName: q.subModuleId?.nom || null,
-      pdfName: q.pdfId?.nomFichier || null,
+      seanceName: q.seanceId?.titre || null,
       submittedAt: q.submittedAt || q.dateCompletion,
       totalQuestions: q.questions?.length || 0,
       correctAnswers: (q.scoringDetails || []).filter(d => d.correct).length
@@ -222,11 +245,9 @@ export const getStudentFeedback = async (studentId, moduleId) => {
         : null,
 
       // Métadonnées
-      subModuleName: e.subModuleId?.nom || null,
-      pdfName: e.pdfId?.nomFichier || null,
+      seanceName: e.seanceId?.titre || null,
       submittedAt: e.submittedAt || e.dateCompletion,
-      type: e.type || 'theoretical',
-      difficulty: e.difficulty || 'medium'
+      type: e.typeExercice || 'seance'
     }))
 
     // ── 5. Résumé global ──
@@ -274,11 +295,14 @@ export const getTeacherResults = async (professorId) => {
     const subModuleIds = await SubModule.find({
       parentModuleId: { $in: moduleIds }
     }).distinct('_id')
+    const seanceIds = await Seance.find({
+      subModuleId: { $in: subModuleIds }
+    }).distinct('_id')
 
     const quizzes = await Quiz.find({
       $or: [
         { moduleId: { $in: moduleIds } },
-        { subModuleId: { $in: subModuleIds } }
+        { seanceId: { $in: seanceIds } }
       ],
       note: { $exists: true, $ne: null }
     })
@@ -289,7 +313,7 @@ export const getTeacherResults = async (professorId) => {
     const exercises = await Exercise.find({
       $or: [
         { moduleId: { $in: moduleIds } },
-        { subModuleId: { $in: subModuleIds } }
+        { seanceId: { $in: seanceIds } }
       ],
       note: { $exists: true, $ne: null }
     })

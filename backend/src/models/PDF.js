@@ -15,10 +15,10 @@ const pdfSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
-    subModuleId: {
+    seanceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'SubModule',
-      required: [true, 'Le sous-module est requis'],
+      ref: 'Seance',
+      required: [true, 'La séance est requise'],
     },
     textContent: {
       type: String,
@@ -35,6 +35,6 @@ const pdfSchema = new mongoose.Schema(
 );
 
 // Create indexes
-pdfSchema.index({ subModuleId: 1 });
+pdfSchema.index({ seanceId: 1 });
 
 export default mongoose.model('PDF', pdfSchema, 'pdfs');

@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import mongoose from 'mongoose';
 import * as repo from '../repositories/pdf.repository.js';
 import PDF from '../models/PDF.js';
+import Seance from '../models/Seance.js';
 import SubModule from '../models/SubModule.js';
 import CourseModule from '../models/CourseModule.js';
 import { extractTextFromPDF } from './pdf/pdfService.js';
@@ -9,9 +10,31 @@ import logger from '../utils/logger.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errorHandler.js';
 
 export const getPdf = (id) => repo.findById(id);
-export const listBySubModule = (subModuleId) => repo.findBySubModule(subModuleId);
+export const listBySeance = (seanceId) => repo.findBySeance(seanceId);
+export const listBySubModule = async (subModuleId) => {
+	if (!mongoose.Types.ObjectId.isValid(subModuleId)) {
+		throw new ValidationError('Identifiant sous-module invalide', 'subModuleId');
+	}
+
+	const seances = await Seance.find({ subModuleId }).select('_id').lean();
+	if (!seances.length) {
+		return [];
+	}
+
+	const seanceIds = seances.map((seance) => seance._id);
+	return repo.findBySeanceIds(seanceIds);
+};
 
 export const createPdf = async (data) => {
+	if (!data?.seanceId) {
+		throw new ValidationError('Identifiant séance requis', 'seanceId');
+	}
+
+	const seanceExists = await Seance.findById(data.seanceId).select('_id');
+	if (!seanceExists) {
+		throw new NotFoundError('Séance');
+	}
+
 	const savedPdf = await repo.createPdf(data);
 
 	try {
@@ -41,7 +64,10 @@ export const deletePdf = async (id, professorId) => {
 	const pdf = await PDF.findById(id);
 	if (!pdf) throw new NotFoundError('PDF');
 
-	const subModule = await SubModule.findById(pdf.subModuleId).select('parentModuleId');
+	const seance = await Seance.findById(pdf.seanceId).select('subModuleId');
+	if (!seance?.subModuleId) throw new NotFoundError('Séance');
+
+	const subModule = await SubModule.findById(seance.subModuleId).select('parentModuleId');
 	if (!subModule?.parentModuleId) throw new NotFoundError('SubModule');
 
 	const module = await CourseModule.findById(subModule.parentModuleId).select('professorId');

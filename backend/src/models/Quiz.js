@@ -2,19 +2,14 @@ import mongoose from 'mongoose';
 
 const quizSchema = new mongoose.Schema(
   {
-    pdfId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'PDF',
-      default: null,
-    },
     moduleId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'CourseModule',
       default: null,
     },
-    subModuleId: {
+    seanceId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'SubModule',
+      ref: 'Seance',
       default: null,
     },
     etudiantId: {
@@ -22,25 +17,13 @@ const quizSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'L\'étudiant est requis'],
     },
-    type: {
+    typeQuiz: {
       type: String,
       enum: {
-        values: ['pdf', 'submodule', 'module'],
-        message: 'Le type doit être pdf, submodule ou module',
+        values: ['seance', 'global'],
+        message: 'Le type de quiz doit être soit seance soit global',
       },
-      default: 'pdf',
-    },
-    difficulty: {
-      type: String,
-      enum: {
-        values: ['easy', 'medium', 'hard'],
-        message: 'La difficulté doit être easy, medium ou hard',
-      },
-      default: 'medium',
-    },
-    totalQuestions: {
-      type: Number,
-      default: 0,
+      default: 'seance',
     },
     questions: [
       {
@@ -82,6 +65,25 @@ const quizSchema = new mongoose.Schema(
       weaknesses: [String],
       recommendations: [String],
     },
+    scoreParPilier: {
+      // TODO: CT
+      decomposition: {
+        type: Number,
+        default: null,
+      },
+      pattern: {
+        type: Number,
+        default: null,
+      },
+      abstraction: {
+        type: Number,
+        default: null,
+      },
+      algorithme: {
+        type: Number,
+        default: null,
+      },
+    },
     submittedAt: {
       type: Date,
       default: null,
@@ -99,8 +101,8 @@ const quizSchema = new mongoose.Schema(
 // Create indexes
 quizSchema.index({ etudiantId: 1 });
 quizSchema.index({ moduleId: 1 });
-quizSchema.index({ subModuleId: 1 });
-quizSchema.index({ pdfId: 1 });
+quizSchema.index({ seanceId: 1 });
+quizSchema.index({ typeQuiz: 1 });
 quizSchema.index({ dateCompletion: 1 });
 quizSchema.index({ submittedAt: 1 });
 quizSchema.index({ isSubmitted: 1 });

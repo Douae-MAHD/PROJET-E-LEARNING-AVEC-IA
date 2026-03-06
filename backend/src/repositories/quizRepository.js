@@ -25,9 +25,8 @@ export class QuizRepository {
   async findById(quizId) {
     try {
       const quiz = await Quiz.findById(quizId)
-        .populate('pdfId', 'titre cheminFichier')
+        .populate('seanceId', 'titre ordre')
         .populate('moduleId', 'titre')
-        .populate('subModuleId', 'titre')
         .populate('etudiantId', 'nom prenom email');
       
       return quiz;
@@ -37,18 +36,20 @@ export class QuizRepository {
     }
   }
 
-  /**
-   * Find quiz by PDF and Student
-   */
-  async findByPdfAndStudent(pdfId, etudiantId) {
+  async findBySeance(seanceId) {
     try {
-      const quiz = await Quiz.findOne({
-        pdfId,
-        etudiantId
-      });
-      return quiz;
+      return await Quiz.find({ seanceId }).lean();
     } catch (error) {
-      logger.error('Error finding quiz by PDF and student', error, { pdfId, etudiantId });
+      logger.error('Error finding quiz by seance', error, { seanceId });
+      throw new DatabaseError('Failed to retrieve quiz');
+    }
+  }
+
+  async findGlobalByModule(moduleId) {
+    try {
+      return await Quiz.find({ moduleId, typeQuiz: 'global' }).lean();
+    } catch (error) {
+      logger.error('Error finding global quizzes by module', error, { moduleId });
       throw new DatabaseError('Failed to retrieve quiz');
     }
   }
@@ -67,7 +68,7 @@ export class QuizRepository {
       }
 
       const quizzes = await Quiz.find(query)
-        .populate('pdfId', 'titre')
+        .populate('seanceId', 'titre ordre')
         .populate('moduleId', 'titre')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -92,7 +93,7 @@ export class QuizRepository {
 
       const quizzes = await Quiz.find({ moduleId })
         .populate('etudiantId', 'nom prenom email')
-        .populate('pdfId', 'titre')
+        .populate('seanceId', 'titre ordre')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -144,15 +145,12 @@ export class QuizRepository {
     }
   }
 
-  /**
-   * Check if quiz already exists for PDF
-   */
-  async exists(pdfId, etudiantId) {
+  async exists(seanceId, etudiantId) {
     try {
-      const count = await Quiz.countDocuments({ pdfId, etudiantId });
+      const count = await Quiz.countDocuments({ seanceId, etudiantId });
       return count > 0;
     } catch (error) {
-      logger.error('Error checking quiz existence', error, { pdfId, etudiantId });
+      logger.error('Error checking quiz existence', error, { seanceId, etudiantId });
       throw new DatabaseError('Failed to check quiz existence');
     }
   }

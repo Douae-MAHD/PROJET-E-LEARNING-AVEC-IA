@@ -7,12 +7,51 @@ import Quiz from '../../models/Quiz.js';
 import CourseModule from '../../models/CourseModule.js';
 import SubModule from '../../models/SubModule.js';
 import PDF from '../../models/PDF.js';
+import Seance from '../../models/Seance.js';
 import geminiService from '../ai/geminiService.js';
 import pdfService from '../pdf/pdfService.js';
 import { ForbiddenError, NotFoundError, ServiceError, ValidationError } from '../../utils/errorHandler.js';
 import logger from '../../utils/logger.js';
 
 export class QuizService {
+  async createQuiz(data) {
+    const {
+      seanceId = null,
+      moduleId = null,
+      etudiantId,
+      questions = [],
+      reponsesEtudiant = [],
+      typeQuiz = 'seance',
+    } = data;
+
+    if (typeQuiz === 'seance') {
+      if (!seanceId) {
+        throw new ValidationError('seanceId est requis pour un quiz de séance');
+      }
+      const seance = await Seance.findById(seanceId).select('_id');
+      if (!seance) {
+        throw new NotFoundError('Séance');
+      }
+    }
+
+    if (typeQuiz === 'global') {
+      if (!moduleId) {
+        throw new ValidationError('moduleId est requis pour un quiz global');
+      }
+    }
+
+    const quiz = new Quiz({
+      seanceId: typeQuiz === 'global' ? null : seanceId,
+      moduleId: typeQuiz === 'global' ? moduleId : moduleId || null,
+      typeQuiz,
+      etudiantId,
+      questions,
+      reponsesEtudiant,
+    });
+
+    return quiz.save();
+  }
+
   async checkModuleExisting(moduleId, etudiantId) {
     try {
       const module = await CourseModule.findById(moduleId).select('_id');
@@ -45,7 +84,12 @@ export class QuizService {
       const existingQuiz = await Quiz.findOne({ pdfId, etudiantId });
       if (existingQuiz) {
         logger.info('Quiz already exists');
-        return { _id: existingQuiz._id, questions: existingQuiz.questions, isExisting: true };
+        return {
+          _id: existingQuiz._id,
+          questions: existingQuiz.questions,
+          isExisting: true,
+          isSubmitted: existingQuiz.isSubmitted === true,
+        };
       }
 
       // Extract PDF text (assuming PDF is already in DB)
@@ -80,7 +124,12 @@ export class QuizService {
       await newQuiz.save();
 
       logger.success('Quiz generated', { quizId: newQuiz._id });
-      return { _id: newQuiz._id, questions: newQuiz.questions, isExisting: false };
+      return {
+        _id: newQuiz._id,
+        questions: newQuiz.questions,
+        isExisting: false,
+        isSubmitted: false,
+      };
     } catch (error) {
       logger.error('Quiz generation failed', error, { pdfId, etudiantId });
       throw error;
@@ -101,7 +150,12 @@ export class QuizService {
       const existingQuiz = await Quiz.findOne({ moduleId, etudiantId });
       if (existingQuiz) {
         logger.info('Quiz for module already exists');
-        return { _id: existingQuiz._id, questions: existingQuiz.questions, isExisting: true };
+        return {
+          _id: existingQuiz._id,
+          questions: existingQuiz.questions,
+          isExisting: true,
+          isSubmitted: existingQuiz.isSubmitted === true,
+        };
       }
 
       // Get all submodules for this module
@@ -122,7 +176,9 @@ export class QuizService {
       }).filter(id => id !== null);
       
       logger.info('SubModule IDs extracted', { count: subModuleIds.length });
-      const pdfs = await PDF.find({ subModuleId: { $in: subModuleIds } });
+      const seances = await Seance.find({ subModuleId: { $in: subModuleIds } }).select('_id');
+      const seanceIds = seances.map((seance) => seance._id);
+      const pdfs = await PDF.find({ seanceId: { $in: seanceIds } });
       logger.info('PDFs found', { count: pdfs.length });
       
       if (pdfs.length === 0) {
@@ -169,7 +225,12 @@ export class QuizService {
       await newQuiz.save();
 
       logger.success('Module quiz generated', { quizId: newQuiz._id });
-      return { _id: newQuiz._id, questions: newQuiz.questions, isExisting: false };
+      return {
+        _id: newQuiz._id,
+        questions: newQuiz.questions,
+        isExisting: false,
+        isSubmitted: false,
+      };
     } catch (error) {
       logger.error('Module quiz generation failed', error, { moduleId, etudiantId });
       throw error;
@@ -187,14 +248,22 @@ export class QuizService {
       }
 
       // Check if quiz already exists for this submodule
-      const existingQuiz = await Quiz.findOne({ subModuleId, etudiantId });
+      const seances = await Seance.find({ subModuleId }).select('_id');
+      const seanceIds = seances.map((seance) => seance._id);
+
+      const existingQuiz = await Quiz.findOne({ seanceId: { $in: seanceIds }, etudiantId, typeQuiz: 'seance' });
       if (existingQuiz) {
         logger.info('Quiz for submodule already exists');
-        return { _id: existingQuiz._id, questions: existingQuiz.questions, isExisting: true };
+        return {
+          _id: existingQuiz._id,
+          questions: existingQuiz.questions,
+          isExisting: true,
+          isSubmitted: existingQuiz.isSubmitted === true,
+        };
       }
 
       // Get all PDFs for this submodule
-      const pdfs = await PDF.find({ subModuleId });
+      const pdfs = await PDF.find({ seanceId: { $in: seanceIds } });
       
       if (pdfs.length === 0) {
         logger.warn('No PDFs found for submodule', { subModuleId });
@@ -232,7 +301,9 @@ export class QuizService {
 
       // Save quiz
       const newQuiz = new Quiz({
-        subModuleId,
+        seanceId: seanceIds[0] || null,
+        moduleId: subModule.parentModuleId || null,
+        typeQuiz: 'seance',
         etudiantId,
         questions: quizData.questions || [],
         reponsesEtudiant: []
@@ -240,9 +311,101 @@ export class QuizService {
       await newQuiz.save();
 
       logger.success('SubModule quiz generated', { quizId: newQuiz._id });
-      return { _id: newQuiz._id, questions: newQuiz.questions, isExisting: false };
+      return {
+        _id: newQuiz._id,
+        questions: newQuiz.questions,
+        isExisting: false,
+        isSubmitted: false,
+      };
     } catch (error) {
       logger.error('SubModule quiz generation failed', error, { subModuleId, etudiantId });
+      throw error;
+    }
+  }
+
+  async generateQuizFromSeance(seanceId, etudiantId) {
+    try {
+      logger.info('Generating quiz from seance', { seanceId, etudiantId });
+
+      const seance = await Seance.findById(seanceId).select('_id subModuleId');
+      if (!seance) {
+        throw new NotFoundError('Séance');
+      }
+
+      const existingQuiz = await Quiz.findOne({
+        seanceId,
+        etudiantId,
+        typeQuiz: 'seance',
+      }).sort({ createdAt: -1 });
+
+      if (existingQuiz) {
+        logger.info('Quiz for seance already exists');
+        return {
+          _id: existingQuiz._id,
+          questions: existingQuiz.questions,
+          isExisting: true,
+          isSubmitted: existingQuiz.isSubmitted === true,
+        };
+      }
+
+      const pdfs = await PDF.find({ seanceId }).select('nomFichier cheminFichier');
+      if (pdfs.length === 0) {
+        logger.warn('No PDFs found for seance', { seanceId });
+        throw new ServiceError('Seance has no PDF documents');
+      }
+
+      let combinedText = '';
+      for (const pdf of pdfs) {
+        try {
+          if (!pdf?.cheminFichier) {
+            logger.warn('Invalid PDF object for seance', { pdf });
+            continue;
+          }
+          const text = await pdfService.extractText(pdf.cheminFichier);
+          const filename = pdf.nomFichier || 'Unknown Document';
+          combinedText += `\n--- Document: ${filename} ---\n${text}`;
+        } catch (err) {
+          logger.warn('Could not extract text from seance PDF', { pdfId: pdf?._id, err: err.message });
+        }
+      }
+
+      if (!combinedText.trim()) {
+        throw new ServiceError('Could not extract content from seance documents');
+      }
+
+      let quizData = { questions: [] };
+      try {
+        quizData = await geminiService.generateQuizQuestions(combinedText);
+      } catch (err) {
+        logger.error('AI generation failed', err);
+        throw new ServiceError('Failed to generate quiz questions', err);
+      }
+
+      let moduleId = null;
+      if (seance.subModuleId) {
+        const subModule = await SubModule.findById(seance.subModuleId).select('parentModuleId');
+        moduleId = subModule?.parentModuleId || null;
+      }
+
+      const newQuiz = new Quiz({
+        seanceId,
+        moduleId,
+        typeQuiz: 'seance',
+        etudiantId,
+        questions: quizData.questions || [],
+        reponsesEtudiant: [],
+      });
+      await newQuiz.save();
+
+      logger.success('Seance quiz generated', { quizId: newQuiz._id, seanceId });
+      return {
+        _id: newQuiz._id,
+        questions: newQuiz.questions,
+        isExisting: false,
+        isSubmitted: false,
+      };
+    } catch (error) {
+      logger.error('Seance quiz generation failed', error, { seanceId, etudiantId });
       throw error;
     }
   }
@@ -280,13 +443,13 @@ export class QuizService {
         }))
       });
       
-      for (const response of reponsesEtudiant) {
+      for (const [responseIndex, response] of reponsesEtudiant.entries()) {
         // Questions may have either 'id' or '_id', check both
         const question = quiz.questions.find(q => {
           const qId = q.id?.toString() || q._id?.toString();
           const respId = response.questionId?.toString();
           return qId === respId;
-        });
+        }) || quiz.questions[responseIndex];
         
         if (!question) {
           logger.error('❌ QUESTION NOT FOUND', { 
@@ -299,7 +462,7 @@ export class QuizService {
           continue;
         }
 
-        const isCorrect = this.compareAnswers(response.reponse, question.correctAnswer);
+        const isCorrect = this.compareAnswers(response.reponse, question.correctAnswer, question.options);
         if (isCorrect) correct++;
         
         logger.info('✓ ANSWER CHECK', {
@@ -406,42 +569,79 @@ Be encouraging and constructive.
    * - Supports multiple correct answers
    * - Converts index (0,1,2,3) to letter (A,B,C,D)
    */
-  compareAnswers(studentAnswer, correctAnswer) {
+  compareAnswers(studentAnswer, correctAnswer, options = []) {
     if (studentAnswer === null || studentAnswer === undefined || correctAnswer === null || correctAnswer === undefined) {
       return false;
     }
 
     const normalize = (str) => String(str).toUpperCase().trim();
-    
-    // Convert numeric index to letter (0→A, 1→B, 2→C, 3→D)
-    let studentNorm = normalize(studentAnswer);
-    if (/^\d$/.test(studentNorm)) {
-      const indexMap = { '0': 'A', '1': 'B', '2': 'C', '3': 'D' };
-      studentNorm = indexMap[studentNorm] || studentNorm;
-    }
 
-    let correctNorm = normalize(correctAnswer);
-    // Also convert correct answer if it's numeric
-    if (/^\d$/.test(correctNorm)) {
-      const indexMap = { '0': 'A', '1': 'B', '2': 'C', '3': 'D' };
-      correctNorm = indexMap[correctNorm] || correctNorm;
-    }
+    const letterToIndex = { A: 0, B: 1, C: 2, D: 3 };
+    const indexToLetter = { 0: 'A', 1: 'B', 2: 'C', 3: 'D' };
 
-    // Direct match (case/space insensitive)
-    if (studentNorm === correctNorm) {
-      return true;
-    }
+    const getOptionTextByKey = (rawKey) => {
+      if (!options) return null;
 
-    // If correctAnswer is an array, check if student answer matches any option
-    if (Array.isArray(correctAnswer)) {
-      return correctAnswer.some(ans => {
-        let ansNorm = normalize(ans);
-        if (/^\d$/.test(ansNorm)) {
-          const indexMap = { '0': 'A', '1': 'B', '2': 'C', '3': 'D' };
-          ansNorm = indexMap[ansNorm] || ansNorm;
+      if (Array.isArray(options)) {
+        const keyNorm = normalize(rawKey);
+        const index = /^\d+$/.test(keyNorm)
+          ? Number(keyNorm)
+          : letterToIndex[keyNorm];
+        if (Number.isInteger(index) && index >= 0 && index < options.length) {
+          return options[index];
         }
-        return studentNorm === ansNorm;
-      });
+        return null;
+      }
+
+      if (typeof options === 'object') {
+        const direct = options[rawKey];
+        if (direct !== undefined) return direct;
+
+        const keyNorm = normalize(rawKey);
+        const index = /^\d+$/.test(keyNorm)
+          ? Number(keyNorm)
+          : letterToIndex[keyNorm];
+        if (Number.isInteger(index)) {
+          const letter = indexToLetter[index];
+          return options[letter] ?? options[String(index)] ?? null;
+        }
+      }
+
+      return null;
+    };
+
+    const buildVariants = (raw) => {
+      const variants = new Set();
+      const rawNorm = normalize(raw);
+      variants.add(rawNorm);
+
+      if (/^\d+$/.test(rawNorm)) {
+        const numeric = Number(rawNorm);
+        if (indexToLetter[numeric]) variants.add(indexToLetter[numeric]);
+      }
+
+      if (letterToIndex[rawNorm] !== undefined) {
+        variants.add(String(letterToIndex[rawNorm]));
+      }
+
+      const optionText = getOptionTextByKey(raw);
+      if (optionText !== null && optionText !== undefined) {
+        variants.add(normalize(optionText));
+      }
+
+      return variants;
+    };
+
+    const studentVariants = buildVariants(studentAnswer);
+    const correctList = Array.isArray(correctAnswer) ? correctAnswer : [correctAnswer];
+
+    for (const answer of correctList) {
+      const correctVariants = buildVariants(answer);
+      for (const value of correctVariants) {
+        if (studentVariants.has(value)) {
+          return true;
+        }
+      }
     }
 
     return false;
@@ -450,7 +650,8 @@ Be encouraging and constructive.
   async getQuiz(quizId, etudiantId = null) {
     try {
       const quiz = await Quiz.findById(quizId)
-        .populate('pdfId', 'titre')
+        .populate('seanceId', 'titre ordre')
+        .populate('moduleId', 'titre')
         .populate('etudiantId', 'nom email');
 
       if (!quiz) throw new NotFoundError('Quiz');
@@ -461,20 +662,23 @@ Be encouraging and constructive.
       const scoringDetails = Array.isArray(quiz.scoringDetails) ? quiz.scoringDetails : [];
       const totalQuestions = Array.isArray(quiz.questions) ? quiz.questions.length : 0;
       const correctCount = scoringDetails.filter((detail) => detail.correct).length;
+      const hasStudentAnswers = Array.isArray(quiz.reponsesEtudiant) && quiz.reponsesEtudiant.length > 0;
+      const isSubmitted = quiz.isSubmitted === true || quiz.note !== null || hasStudentAnswers;
 
       return {
         _id: quiz._id,
         questions: quiz.questions,
         note: quiz.note,
-        reponses_etudiant: quiz.reponsesEtudiant,
-        result: {
+        isSubmitted,
+        reponses_etudiant: isSubmitted ? quiz.reponsesEtudiant : null,
+        result: isSubmitted ? {
           note: quiz.note,
           correct: correctCount,
           total: totalQuestions,
           scoringDetails,
           feedback: quiz.feedback || { strengths: [], weaknesses: [], recommendations: [] }
-        },
-        feedback: quiz.feedback,
+        } : null,
+        feedback: isSubmitted ? quiz.feedback : null,
         dateCompletion: quiz.dateCompletion
       };
     } catch (error) {
@@ -483,24 +687,30 @@ Be encouraging and constructive.
     }
   }
 
-  async getStudentQuizzes(etudiantId, page = 1, limit = 10) {
+  async getStudentQuizzes(etudiantId, moduleId = null, page = 1, limit = 10) {
     try {
       const skip = (page - 1) * limit;
-      const quizzes = await Quiz.find({ etudiantId })
-        .populate('pdfId', 'titre')
+      const query = { etudiantId };
+      if (moduleId) {
+        query.moduleId = moduleId;
+      }
+
+      const quizzes = await Quiz.find(query)
+        .populate('seanceId', 'titre ordre')
+        .populate('moduleId', 'titre')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
-      const total = await Quiz.countDocuments({ etudiantId });
+      const total = await Quiz.countDocuments(query);
 
       return {
         quizzes: quizzes.map(q => ({
           _id: q._id,
-          title: q.pdfId?.titre || 'Quiz',
+          title: q.seanceId?.titre || q.moduleId?.titre || 'Quiz',
           note: q.note,
           dateCompletion: q.dateCompletion,
-          isSubmitted: q.note !== null
+          isSubmitted: q.isSubmitted === true
         })),
         pagination: { page, limit, total, pages: Math.ceil(total / limit) }
       };

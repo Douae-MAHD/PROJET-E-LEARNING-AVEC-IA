@@ -97,6 +97,23 @@ export class QuizController {
   });
 
   /**
+   * POST /quiz/generate/seance/:seanceId
+   * Generate quiz from seance
+   */
+  generateFromSeance = asyncHandler(async (req, res) => {
+    const { seanceId } = req.params;
+    const etudiantId = req.user.id;
+
+    logger.logRequest('POST', `/quiz/generate/seance/${seanceId}`, etudiantId);
+
+    quizValidator.validateObjectId(seanceId, 'seanceId');
+
+    const quiz = await quizService.generateQuizFromSeance(seanceId, etudiantId);
+
+    sendSuccess(res, quiz, 'Seance quiz generated successfully', 201);
+  });
+
+  /**
    * GET /quiz/:quizId
    * Retrieve quiz questions
    */

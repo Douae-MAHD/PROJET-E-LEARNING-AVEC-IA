@@ -17,7 +17,34 @@ function QuizView() {
   const [error, setError] = useState('')
   const [showDetails, setShowDetails] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [currentQuestion, setCurrentQuestion] = useState(0)
+
+  const getOptionTextByKey = (question, key) => {
+    const options = question?.options
+    if (!options) return key
+
+    if (Array.isArray(options)) {
+      const normalized = String(key).toUpperCase()
+      const indexMap = { A: 0, B: 1, C: 2, D: 3 }
+      const index = /^\d+$/.test(normalized) ? Number(normalized) : indexMap[normalized]
+      return Number.isInteger(index) && index >= 0 && index < options.length
+        ? options[index]
+        : key
+    }
+
+    if (typeof options === 'object') {
+      return options[key] ?? options[String(key).toUpperCase()] ?? options[String(key).toLowerCase()] ?? key
+    }
+
+    return key
+  }
+
+  const getOptionEntries = (question) => {
+    const options = question?.options
+    if (!options) return []
+    if (Array.isArray(options)) return options.map((value, idx) => [String(idx), value])
+    if (typeof options === 'object') return Object.entries(options)
+    return []
+  }
 
   const normalizeAnswer = (value) => {
     if (value === null || value === undefined) return ''
@@ -97,12 +124,22 @@ function QuizView() {
       setLoading(true)
       const data = await quizAPI.getById(quizId)
       setQuiz(data)
-      if (data.reponses_etudiant) {
-        const answersObj = Array.isArray(data.reponses_etudiant)
-          ? extractAnswersByIndex(data.questions || [], data.reponses_etudiant)
-          : data.reponses_etudiant
-        setAnswers(answersObj)
+      const hasSubmittedAnswers = Array.isArray(data.reponses_etudiant)
+        ? data.reponses_etudiant.length > 0
+        : !!data.reponses_etudiant && Object.keys(data.reponses_etudiant).length > 0
+
+      const isSubmittedQuiz = data.isSubmitted === true || hasSubmittedAnswers || (data.note !== null && data.note !== undefined)
+
+      if (isSubmittedQuiz) {
         setSubmitted(true)
+
+        if (hasSubmittedAnswers) {
+          const answersObj = Array.isArray(data.reponses_etudiant)
+            ? extractAnswersByIndex(data.questions || [], data.reponses_etudiant)
+            : data.reponses_etudiant
+          setAnswers(answersObj)
+        }
+
         if (data.result) {
           const scoringDetails = data.result.scoringDetails || []
           const correctionsFromScoring = scoringDetails.map((detail, idx) => ({
@@ -124,9 +161,11 @@ function QuizView() {
             corrections: correctionsFromScoring
           })
         } else if (data.note !== null && data.note !== undefined) {
-          const answersByIndex = Array.isArray(data.reponses_etudiant)
+          const answersByIndex = hasSubmittedAnswers
+            ? (Array.isArray(data.reponses_etudiant)
             ? extractAnswersByIndex(data.questions || [], data.reponses_etudiant)
-            : (data.reponses_etudiant || {})
+            : (data.reponses_etudiant || {}))
+            : {}
 
           const corrections = data.questions?.map((q, idx) => {
             const studentAnswer = answersByIndex[idx]
@@ -151,6 +190,10 @@ function QuizView() {
             total: data.questions?.length || 0
           })
         }
+      } else {
+        setSubmitted(false)
+        setResult(null)
+        setAnswers({})
       }
     } catch (err) {
       setError(err.message)
@@ -180,7 +223,7 @@ function QuizView() {
       const data = await quizAPI.submit(quizId, reponsesFormatted)
 
       const normalizedResult = {
-        note: data.note || data.score || 0,
+        note: data.note ?? data.score ?? null,
         correct: data.correct || 0,
         total: data.total || quiz.questions.length,
         scoringDetails: data.scoringDetails || [],
@@ -214,7 +257,7 @@ function QuizView() {
           }) || []
 
           const normalizedResult = {
-            note: quiz.note || quiz.result?.note || 0,
+            note: quiz.note ?? quiz.result?.note ?? null,
             correct: quiz.result?.correct || corrections.filter(c => c.correct).length,
             total: quiz.questions?.length || 0,
             feedback: quiz.result?.feedback || { strengths: [], weaknesses: [], recommendations: [] },
@@ -302,7 +345,17 @@ function QuizView() {
   // ─── FEEDBACK ONLY ───────────────────────────────────────────────────────────
   if (showFeedbackOnly) {
     let displayResult = result
-    if (!displayResult && quiz && (quiz.reponses_etudiant || quiz.note !== null)) {
+    const hasStoredAnswers = Array.isArray(quiz.reponses_etudiant)
+      ? quiz.reponses_etudiant.length > 0
+      : !!quiz.reponses_etudiant && Object.keys(quiz.reponses_etudiant).length > 0
+
+    const hasFeedbackData = quiz && (
+      quiz.isSubmitted === true ||
+      hasStoredAnswers ||
+      (quiz.note !== null && quiz.note !== undefined)
+    )
+
+    if (!displayResult && hasFeedbackData) {
       const answersByIndex = Array.isArray(quiz.reponses_etudiant)
         ? extractAnswersByIndex(quiz.questions || [], quiz.reponses_etudiant)
         : (quiz.reponses_etudiant || {})
@@ -320,10 +373,10 @@ function QuizView() {
       }) || []
 
       const correctCount = corrections.filter(c => c.correct).length
-      const generatedFeedback = generateFeedback(corrections, quiz.note || 0, quiz.questions?.length || 0)
+      const generatedFeedback = generateFeedback(corrections, quiz.note ?? 0, quiz.questions?.length || 0)
 
       displayResult = {
-        note: quiz.note || 0,
+        note: quiz.note ?? 0,
         correct: correctCount,
         total: quiz.questions?.length || 0,
         feedback: quiz.feedback || quiz.result?.feedback || generatedFeedback,
@@ -331,8 +384,13 @@ function QuizView() {
       }
     }
 
-    if (!displayResult && quiz.note === null && !quiz.reponses_etudiant) {
-      return <div className="qv-error-screen"><p>Aucun résultat disponible pour ce quiz</p></div>
+    if (!displayResult && !hasFeedbackData) {
+      return (
+        <div className="qv-error-screen">
+          <p>Ce quiz n'est pas encore soumis. Passez le quiz avant d'afficher le feedback.</p>
+          <button className="qv-btn qv-btn-secondary" onClick={() => navigate(`/quiz/${quizId}`)}>Passer le quiz</button>
+        </div>
+      )
     }
 
     if (displayResult) {
@@ -433,12 +491,12 @@ function QuizView() {
                         <div className="qv-correction-details">
                           {correction.studentAnswer && (
                             <div className="qv-student-answer">
-                              <strong>Votre réponse :</strong> {correction.studentAnswer}: {question?.options?.[correction.studentAnswer]}
+                              <strong>Votre réponse :</strong> {correction.studentAnswer}: {getOptionTextByKey(question, correction.studentAnswer)}
                             </div>
                           )}
                           {!correction.correct && (
                             <div className="qv-correct-answer">
-                              <strong>Bonne réponse :</strong> {correction.correctAnswer}: {question?.options?.[correction.correctAnswer]}
+                              <strong>Bonne réponse :</strong> {correction.correctAnswer}: {getOptionTextByKey(question, correction.correctAnswer)}
                             </div>
                           )}
                         </div>
@@ -524,7 +582,7 @@ function QuizView() {
                 <div className="qv-question-body">
                   <p className="qv-question-text">{question.question}</p>
                   <div className="qv-options">
-                    {Object.entries(question.options).map(([key, value]) => {
+                    {getOptionEntries(question).map(([key, value]) => {
                       const isSelected = answers[index] === key
                       const isCorrect = question.correctAnswer === key
 
@@ -679,12 +737,12 @@ function QuizView() {
                                   <div className="qv-correction-details">
                                     {correction.studentAnswer && (
                                       <div className="qv-student-answer">
-                                        <strong>Votre réponse :</strong> {correction.studentAnswer}: {question?.options?.[correction.studentAnswer]}
+                                        <strong>Votre réponse :</strong> {correction.studentAnswer}: {getOptionTextByKey(question, correction.studentAnswer)}
                                       </div>
                                     )}
                                     {!correction.correct && (
                                       <div className="qv-correct-answer">
-                                        <strong>Bonne réponse :</strong> {correction.correctAnswer}: {question?.options?.[correction.correctAnswer]}
+                                        <strong>Bonne réponse :</strong> {correction.correctAnswer}: {getOptionTextByKey(question, correction.correctAnswer)}
                                       </div>
                                     )}
                                   </div>

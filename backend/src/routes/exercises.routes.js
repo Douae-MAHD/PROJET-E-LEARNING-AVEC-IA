@@ -17,6 +17,7 @@ import {
   validateExerciseIdParam,
   validateModuleIdParam,
   validateSubModuleIdParam,
+  validateSeanceIdParam,
   validatePdfIdParam
 } from '../validators/exercise.validator.js';
 
@@ -58,6 +59,14 @@ router.post(
   authenticateToken,
   validateModuleIdParam,
   exercisesController.generateGlobal
+);
+
+router.post(
+  '/generate/seance/:seanceId',
+  aiGenerationLimiter,
+  authenticateToken,
+  validateSeanceIdParam,
+  exercisesController.generateForSeance
 );
 
 // Route générique en DERNIER dans le groupe /generate

@@ -90,7 +90,13 @@ class EnrollmentsService {
       const allStudents = await User.find({ role: 'etudiant' }, 'nom email').sort({ nom: 1 });
 
       // Filter out already enrolled students
-      const enrolledIds = module.studentEnrollments.map(id => id.toString());
+      const { enrollments } = await enrollmentRepository.findByModule(moduleIdObj, {
+        limit: 1000,
+        page: 1,
+      });
+      const enrolledIds = (enrollments || [])
+        .map((enrollment) => enrollment?.etudiantId?._id?.toString())
+        .filter(Boolean);
       const availableStudents = allStudents.filter(
         student => !enrolledIds.includes(student._id.toString())
       );
@@ -149,11 +155,6 @@ class EnrollmentsService {
         etudiantId: studentIdObj,
       });
 
-      // Add to module's studentEnrollments list
-      await CourseModule.findByIdAndUpdate(moduleIdObj, {
-        $addToSet: { studentEnrollments: studentIdObj },
-      });
-
       logger.info('Student enrolled', { moduleId, studentId });
 
       return {
@@ -202,11 +203,6 @@ class EnrollmentsService {
       }
 
       await enrollmentRepository.delete(enrollment._id);
-
-      // Remove from module's studentEnrollments list
-      await CourseModule.findByIdAndUpdate(moduleIdObj, {
-        $pull: { studentEnrollments: studentIdObj },
-      });
 
       logger.info('Student unenrolled', { moduleId, studentId });
 
