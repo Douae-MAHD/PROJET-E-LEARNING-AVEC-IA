@@ -9,6 +9,7 @@ import config from './config/env.js';
 import { setupSwagger } from './config/swagger.js';
 import apiRoutes from './routes/index.js';
 import seanceRoutes from './routes/seance.routes.js';
+import seanceProgressionRoutes from './routes/seanceProgression.routes.js';
 import { generalErrorHandler, notFound } from './utils/errorHandler.js';
 
 const app = express();
@@ -71,6 +72,7 @@ setupSwagger(app);
 // API routes
 app.use('/api', apiRoutes);
 app.use('/api/seances', seanceRoutes);
+app.use('/api/progression', seanceProgressionRoutes);
 
 // 404 handler
 app.use(notFound);

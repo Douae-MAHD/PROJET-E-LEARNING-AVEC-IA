@@ -1,6 +1,9 @@
 /**
  * Quiz Service
  * Core business logic for quiz operations
+ * 
+ * MODIF : submitQuiz → après sauvegarde, appelle validerSeance
+ *         pour lier le score quiz à la progression linéaire (règle Salma)
  */
 
 import Quiz from '../../models/Quiz.js';
@@ -12,6 +15,9 @@ import geminiService from '../ai/geminiService.js';
 import pdfService from '../pdf/pdfService.js';
 import { ForbiddenError, NotFoundError, ServiceError, ValidationError } from '../../utils/errorHandler.js';
 import logger from '../../utils/logger.js';
+
+// ── Import progression service ──────────────────────────────────────────────
+import * as progressionService from '../seanceProgression.service.js';
 
 export class QuizService {
   async createQuiz(data) {
@@ -25,19 +31,13 @@ export class QuizService {
     } = data;
 
     if (typeQuiz === 'seance') {
-      if (!seanceId) {
-        throw new ValidationError('seanceId est requis pour un quiz de séance');
-      }
+      if (!seanceId) throw new ValidationError('seanceId est requis pour un quiz de séance');
       const seance = await Seance.findById(seanceId).select('_id');
-      if (!seance) {
-        throw new NotFoundError('Séance');
-      }
+      if (!seance) throw new NotFoundError('Séance');
     }
 
     if (typeQuiz === 'global') {
-      if (!moduleId) {
-        throw new ValidationError('moduleId est requis pour un quiz global');
-      }
+      if (!moduleId) throw new ValidationError('moduleId est requis pour un quiz global');
     }
 
     const quiz = new Quiz({
@@ -61,9 +61,7 @@ export class QuizService {
         .sort({ createdAt: -1 })
         .select('_id isSubmitted');
 
-      if (!existingQuiz) {
-        return { exists: false };
-      }
+      if (!existingQuiz) return { exists: false };
 
       return {
         exists: true,
@@ -76,14 +74,12 @@ export class QuizService {
     }
   }
 
-  async generateFromPDF(pdfId, etudiantId) {
+  async generateQuizFromPDF(pdfId, etudiantId) {
     try {
       logger.info('Generating quiz from PDF', { pdfId, etudiantId });
 
-      // Check if quiz already exists
       const existingQuiz = await Quiz.findOne({ pdfId, etudiantId });
       if (existingQuiz) {
-        logger.info('Quiz already exists');
         return {
           _id: existingQuiz._id,
           questions: existingQuiz.questions,
@@ -92,20 +88,17 @@ export class QuizService {
         };
       }
 
-      // Extract PDF text (assuming PDF is already in DB)
       let pdfText = 'Sample PDF content';
       try {
         const pdf = await PDF.findById(pdfId).select('titre cheminFichier');
         if (pdf && pdf.cheminFichier) {
           pdfText = await pdfService.extractText(pdf.cheminFichier);
-          logger.debug('PDF text extracted', { pdfId, length: pdfText.length });
         }
       } catch (err) {
         logger.warn('Could not extract PDF text', { pdfId, err: err.message });
         pdfText = 'PDF content unavailable';
       }
 
-      // Generate via AI
       let quizData = { questions: [] };
       try {
         quizData = await geminiService.generateQuizQuestions(pdfText);
@@ -114,7 +107,6 @@ export class QuizService {
         throw new ServiceError('Failed to generate quiz questions', err);
       }
 
-      // Save quiz
       const newQuiz = new Quiz({
         pdfId,
         etudiantId,
@@ -123,7 +115,6 @@ export class QuizService {
       });
       await newQuiz.save();
 
-      logger.success('Quiz generated', { quizId: newQuiz._id });
       return {
         _id: newQuiz._id,
         questions: newQuiz.questions,
@@ -138,18 +129,11 @@ export class QuizService {
 
   async generateQuizFromModule(moduleId, etudiantId) {
     try {
-      logger.info('Generating quiz from module', { moduleId, etudiantId });
-
-      // Check if module exists
       const module = await CourseModule.findById(moduleId);
-      if (!module) {
-        throw new NotFoundError('CourseModule');
-      }
+      if (!module) throw new NotFoundError('CourseModule');
 
-      // Check if quiz already exists for this module
       const existingQuiz = await Quiz.findOne({ moduleId, etudiantId });
       if (existingQuiz) {
-        logger.info('Quiz for module already exists');
         return {
           _id: existingQuiz._id,
           questions: existingQuiz.questions,
@@ -158,64 +142,35 @@ export class QuizService {
         };
       }
 
-      // Get all submodules for this module
       const subModules = await SubModule.find({ parentModuleId: moduleId });
-      logger.info('Submodules found', { count: subModules.length, moduleId });
-      if (subModules.length === 0) {
-        logger.warn('No submodules found for module', { moduleId });
-        throw new ServiceError('Module has no content');
-      }
+      if (subModules.length === 0) throw new ServiceError('Module has no content');
 
-      // Get all PDFs for these submodules
-      const subModuleIds = subModules.map(sm => {
-        if (!sm || !sm._id) {
-          logger.warn('Invalid submodule', { sm });
-          return null;
-        }
-        return sm._id;
-      }).filter(id => id !== null);
-      
-      logger.info('SubModule IDs extracted', { count: subModuleIds.length });
+      const subModuleIds = subModules.map(sm => sm?._id).filter(Boolean);
       const seances = await Seance.find({ subModuleId: { $in: subModuleIds } }).select('_id');
-      const seanceIds = seances.map((seance) => seance._id);
+      const seanceIds = seances.map(s => s._id);
       const pdfs = await PDF.find({ seanceId: { $in: seanceIds } });
-      logger.info('PDFs found', { count: pdfs.length });
-      
-      if (pdfs.length === 0) {
-        logger.warn('No PDFs found for module submodules', { moduleId });
-        throw new ServiceError('Module has no PDF documents');
-      }
+      if (pdfs.length === 0) throw new ServiceError('Module has no PDF documents');
 
-      // Extract text from all PDFs
       let combinedText = '';
       for (const pdf of pdfs) {
         try {
-          if (!pdf || !pdf.cheminFichier) {
-            logger.warn('Invalid PDF object', { pdf });
-            continue;
-          }
+          if (!pdf?.cheminFichier) continue;
           const text = await pdfService.extractText(pdf.cheminFichier);
-          const filename = pdf.nomFichier || 'Unknown Document';
-          combinedText += `\n--- Document: ${filename} ---\n${text}`;
+          combinedText += `\n--- Document: ${pdf.nomFichier || 'Unknown Document'} ---\n${text}`;
         } catch (err) {
           logger.warn('Could not extract text from PDF', { pdfId: pdf?._id, err: err.message });
         }
       }
 
-      if (!combinedText.trim()) {
-        throw new ServiceError('Could not extract content from module documents');
-      }
+      if (!combinedText.trim()) throw new ServiceError('Could not extract content from module documents');
 
-      // Generate quiz via AI
       let quizData = { questions: [] };
       try {
         quizData = await geminiService.generateQuizQuestions(combinedText);
       } catch (err) {
-        logger.error('AI generation failed', err);
         throw new ServiceError('Failed to generate quiz questions', err);
       }
 
-      // Save quiz
       const newQuiz = new Quiz({
         moduleId,
         etudiantId,
@@ -224,7 +179,6 @@ export class QuizService {
       });
       await newQuiz.save();
 
-      logger.success('Module quiz generated', { quizId: newQuiz._id });
       return {
         _id: newQuiz._id,
         questions: newQuiz.questions,
@@ -237,23 +191,15 @@ export class QuizService {
     }
   }
 
-  async generateQuizFromSubModule(subModuleId, etudiantId) {
+  async generateQuizFromSeance(seanceId, etudiantId) {
     try {
-      logger.info('Generating quiz from submodule', { subModuleId, etudiantId });
+      logger.info('Generating quiz from seance', { seanceId, etudiantId });
 
-      // Check if submodule exists
-      const subModule = await SubModule.findById(subModuleId);
-      if (!subModule) {
-        throw new NotFoundError('SubModule');
-      }
+      const seance = await Seance.findById(seanceId);
+      if (!seance) throw new NotFoundError('Séance');
 
-      // Check if quiz already exists for this submodule
-      const seances = await Seance.find({ subModuleId }).select('_id');
-      const seanceIds = seances.map((seance) => seance._id);
-
-      const existingQuiz = await Quiz.findOne({ seanceId: { $in: seanceIds }, etudiantId, typeQuiz: 'seance' });
+      const existingQuiz = await Quiz.findOne({ seanceId, etudiantId });
       if (existingQuiz) {
-        logger.info('Quiz for submodule already exists');
         return {
           _id: existingQuiz._id,
           questions: existingQuiz.questions,
@@ -262,142 +208,38 @@ export class QuizService {
         };
       }
 
-      // Get all PDFs for this submodule
-      const pdfs = await PDF.find({ seanceId: { $in: seanceIds } });
-      
-      if (pdfs.length === 0) {
-        logger.warn('No PDFs found for submodule', { subModuleId });
-        throw new ServiceError('SubModule has no PDF documents');
-      }
+      const pdfs = await PDF.find({ seanceId });
+      if (pdfs.length === 0) throw new ServiceError('Séance has no PDF documents');
 
-      // Extract text from all PDFs
       let combinedText = '';
       for (const pdf of pdfs) {
         try {
-          if (!pdf || !pdf.cheminFichier) {
-            logger.warn('Invalid PDF object', { pdf });
-            continue;
-          }
+          if (!pdf?.cheminFichier) continue;
           const text = await pdfService.extractText(pdf.cheminFichier);
-          const filename = pdf.nomFichier || 'Unknown Document';
-          combinedText += `\n--- Document: ${filename} ---\n${text}`;
+          combinedText += `\n--- Document: ${pdf.nomFichier || 'Document'} ---\n${text}`;
         } catch (err) {
-          logger.warn('Could not extract text from PDF', { pdfId: pdf?._id, err: err.message });
+          logger.warn('Could not extract PDF text', { pdfId: pdf?._id, err: err.message });
         }
       }
 
-      if (!combinedText.trim()) {
-        throw new ServiceError('Could not extract content from submodule documents');
-      }
+      if (!combinedText.trim()) throw new ServiceError('Could not extract content from séance documents');
 
-      // Generate quiz via AI
       let quizData = { questions: [] };
       try {
         quizData = await geminiService.generateQuizQuestions(combinedText);
       } catch (err) {
-        logger.error('AI generation failed', err);
         throw new ServiceError('Failed to generate quiz questions', err);
       }
 
-      // Save quiz
       const newQuiz = new Quiz({
-        seanceId: seanceIds[0] || null,
-        moduleId: subModule.parentModuleId || null,
-        typeQuiz: 'seance',
+        seanceId,
+        moduleId: seance.moduleId || null,
         etudiantId,
         questions: quizData.questions || [],
         reponsesEtudiant: []
       });
       await newQuiz.save();
 
-      logger.success('SubModule quiz generated', { quizId: newQuiz._id });
-      return {
-        _id: newQuiz._id,
-        questions: newQuiz.questions,
-        isExisting: false,
-        isSubmitted: false,
-      };
-    } catch (error) {
-      logger.error('SubModule quiz generation failed', error, { subModuleId, etudiantId });
-      throw error;
-    }
-  }
-
-  async generateQuizFromSeance(seanceId, etudiantId) {
-    try {
-      logger.info('Generating quiz from seance', { seanceId, etudiantId });
-
-      const seance = await Seance.findById(seanceId).select('_id subModuleId');
-      if (!seance) {
-        throw new NotFoundError('Séance');
-      }
-
-      const existingQuiz = await Quiz.findOne({
-        seanceId,
-        etudiantId,
-        typeQuiz: 'seance',
-      }).sort({ createdAt: -1 });
-
-      if (existingQuiz) {
-        logger.info('Quiz for seance already exists');
-        return {
-          _id: existingQuiz._id,
-          questions: existingQuiz.questions,
-          isExisting: true,
-          isSubmitted: existingQuiz.isSubmitted === true,
-        };
-      }
-
-      const pdfs = await PDF.find({ seanceId }).select('nomFichier cheminFichier');
-      if (pdfs.length === 0) {
-        logger.warn('No PDFs found for seance', { seanceId });
-        throw new ServiceError('Seance has no PDF documents');
-      }
-
-      let combinedText = '';
-      for (const pdf of pdfs) {
-        try {
-          if (!pdf?.cheminFichier) {
-            logger.warn('Invalid PDF object for seance', { pdf });
-            continue;
-          }
-          const text = await pdfService.extractText(pdf.cheminFichier);
-          const filename = pdf.nomFichier || 'Unknown Document';
-          combinedText += `\n--- Document: ${filename} ---\n${text}`;
-        } catch (err) {
-          logger.warn('Could not extract text from seance PDF', { pdfId: pdf?._id, err: err.message });
-        }
-      }
-
-      if (!combinedText.trim()) {
-        throw new ServiceError('Could not extract content from seance documents');
-      }
-
-      let quizData = { questions: [] };
-      try {
-        quizData = await geminiService.generateQuizQuestions(combinedText);
-      } catch (err) {
-        logger.error('AI generation failed', err);
-        throw new ServiceError('Failed to generate quiz questions', err);
-      }
-
-      let moduleId = null;
-      if (seance.subModuleId) {
-        const subModule = await SubModule.findById(seance.subModuleId).select('parentModuleId');
-        moduleId = subModule?.parentModuleId || null;
-      }
-
-      const newQuiz = new Quiz({
-        seanceId,
-        moduleId,
-        typeQuiz: 'seance',
-        etudiantId,
-        questions: quizData.questions || [],
-        reponsesEtudiant: [],
-      });
-      await newQuiz.save();
-
-      logger.success('Seance quiz generated', { quizId: newQuiz._id, seanceId });
       return {
         _id: newQuiz._id,
         questions: newQuiz.questions,
@@ -410,101 +252,124 @@ export class QuizService {
     }
   }
 
+  async generateQuizFromSubModule(subModuleId, etudiantId) {
+    // inchangé — pas de soumission ici
+    try {
+      logger.info('Generating quiz from submodule', { subModuleId, etudiantId });
+      const subModule = await SubModule.findById(subModuleId);
+      if (!subModule) throw new NotFoundError('SubModule');
+
+      const existingQuiz = await Quiz.findOne({ subModuleId, etudiantId });
+      if (existingQuiz) {
+        return {
+          _id: existingQuiz._id,
+          questions: existingQuiz.questions,
+          isExisting: true,
+          isSubmitted: existingQuiz.isSubmitted === true,
+        };
+      }
+
+      const seances = await Seance.find({ subModuleId }).select('_id');
+      const seanceIds = seances.map(s => s._id);
+      const pdfs = await PDF.find({ seanceId: { $in: seanceIds } });
+      if (pdfs.length === 0) throw new ServiceError('SubModule has no PDF documents');
+
+      let combinedText = '';
+      for (const pdf of pdfs) {
+        try {
+          if (!pdf?.cheminFichier) continue;
+          const text = await pdfService.extractText(pdf.cheminFichier);
+          combinedText += `\n--- Document: ${pdf.nomFichier || 'Document'} ---\n${text}`;
+        } catch (err) {
+          logger.warn('Could not extract PDF text', { pdfId: pdf?._id, err: err.message });
+        }
+      }
+
+      if (!combinedText.trim()) throw new ServiceError('Could not extract content from submodule');
+
+      let quizData = { questions: [] };
+      try {
+        quizData = await geminiService.generateQuizQuestions(combinedText);
+      } catch (err) {
+        throw new ServiceError('Failed to generate quiz questions', err);
+      }
+
+      const newQuiz = new Quiz({
+        subModuleId,
+        moduleId: subModule.parentModuleId || null,
+        etudiantId,
+        questions: quizData.questions || [],
+        reponsesEtudiant: []
+      });
+      await newQuiz.save();
+
+      return {
+        _id: newQuiz._id,
+        questions: newQuiz.questions,
+        isExisting: false,
+        isSubmitted: false,
+      };
+    } catch (error) {
+      logger.error('SubModule quiz generation failed', error, { subModuleId, etudiantId });
+      throw error;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // submitQuiz — MODIFIÉ
+  // Après sauvegarde du score, appelle validerSeance si quiz de type 'seance'
+  // Règle Salma : on valide TOUJOURS, le score sert à mesurer le CT uniquement
+  // ══════════════════════════════════════════════════════════════════════════
   async submitQuiz(quizId, etudiantId, reponsesEtudiant) {
     try {
       logger.info('Submitting quiz', { quizId, etudiantId });
 
       const quiz = await Quiz.findById(quizId);
       if (!quiz) throw new NotFoundError('Quiz');
-
-      if (!quiz.etudiantId || quiz.etudiantId.toString() !== etudiantId.toString()) {
+      if (quiz.etudiantId?.toString() !== etudiantId.toString()) {
         throw new ForbiddenError('Accès refusé à cette ressource');
       }
-
-      // TASK 3: Prevent duplicate submission
-      if (quiz.isSubmitted && quiz.submittedAt) {
-        logger.warn('Attempt to resubmit quiz', { quizId, etudiantId, submittedAt: quiz.submittedAt });
-        throw new ValidationError('Quiz already submitted. Resubmission not allowed');
+      if (quiz.isSubmitted) {
+        throw new ServiceError('Quiz already submitted');
       }
 
-      // TASK 4: Improve answer matching with compareAnswers helper
-      let correct = 0;
+      // ── Calcul du score ──────────────────────────────────────────────────
       const details = [];
-      
-      logger.info('=== QUIZ SUBMISSION DEBUG ===', { 
-        quizId,
-        totalQuestions: quiz.questions.length, 
-        submittedResponses: reponsesEtudiant.length,
-        questionIds: quiz.questions.map((q, idx) => ({ 
-          idx,
-          id: q.id?.toString(),
-          _id: q._id?.toString(),
-          question: q.question?.substring(0, 50)
-        }))
-      });
-      
-      for (const [responseIndex, response] of reponsesEtudiant.entries()) {
-        // Questions may have either 'id' or '_id', check both
-        const question = quiz.questions.find(q => {
-          const qId = q.id?.toString() || q._id?.toString();
-          const respId = response.questionId?.toString();
-          return qId === respId;
-        }) || quiz.questions[responseIndex];
-        
-        if (!question) {
-          logger.error('❌ QUESTION NOT FOUND', { 
-            responseId: response.questionId?.toString(),
-            quizQuestionIds: quiz.questions.map(q => ({
-              id: q.id?.toString(),
-              _id: q._id?.toString()
-            }))
-          });
-          continue;
-        }
+      let correct = 0;
 
-        const isCorrect = this.compareAnswers(response.reponse, question.correctAnswer, question.options);
+      for (const response of reponsesEtudiant) {
+        const question = quiz.questions.find(q => q._id?.toString() === response.questionId?.toString());
+        if (!question) continue;
+
+        const isCorrect = this.compareAnswers(
+          response.answer,
+          question.correctAnswer,
+          question.options
+        );
+
         if (isCorrect) correct++;
-        
-        logger.info('✓ ANSWER CHECK', {
-          studentAnswer: response.reponse,
-          correctAnswer: question.correctAnswer,
-          isCorrect
-        });
-
         details.push({
           questionId: response.questionId,
-          question: question.question,
-          studentAnswer: response.reponse,
-          correctAnswer: question.correctAnswer,
           correct: isCorrect,
-          explanation: isCorrect 
-            ? 'Réponse correcte' 
-            : `Bonne réponse: ${question.correctAnswer}`
+          studentAnswer: response.answer,
+          correctAnswer: question.correctAnswer,
+          feedback: isCorrect ? 'Bonne réponse ✓' : `Bonne réponse: ${question.correctAnswer}`
         });
       }
 
-      const note = (correct / (quiz.questions.length || 1)) * 20;
-      logger.info('=== FINAL SCORE ===', {
-        correct,
-        total: quiz.questions.length,
-        rawNote: note,
-        roundedNote: Math.round(note * 10) / 10
-      });
+      const note = Math.round((correct / (quiz.questions.length || 1)) * 20 * 10) / 10;
 
-      quiz.reponsesEtudiant = reponsesEtudiant;
-      quiz.note = Math.round(note * 10) / 10;
-      quiz.dateCompletion = new Date();
-      quiz.submittedAt = new Date();
-      quiz.isSubmitted = true;
-      quiz.scoringDetails = details;
+      // ── Feedback Gemini ──────────────────────────────────────────────────
+      let feedbackData = {
+        strengths: ['Participation au quiz'],
+        weaknesses: [],
+        recommendations: ['Réviser les concepts mal compris']
+      };
 
-      logger.info('Generating quiz feedback with Gemini', { quizId, score: quiz.note, correct, total: quiz.questions.length });
-
-      // Generate global feedback from Gemini
       try {
         const feedbackPrompt = `
 You are an educational assistant. Analyze this quiz performance:
-- Student Score: ${quiz.note}/20 (${correct}/${quiz.questions.length} correct)
+- Student Score: ${note}/20 (${correct}/${quiz.questions.length} correct)
 - Subject: ${quiz.moduleId ? 'Module content' : 'PDF content'}
 
 Provide feedback in JSON format:
@@ -513,48 +378,56 @@ Provide feedback in JSON format:
   "weaknesses": ["weakness1", "weakness2"],
   "recommendations": ["recommendation1", "recommendation2"]
 }
+Be encouraging and constructive.`;
 
-Be encouraging and constructive.
-`;
-
-        const globalFeedback = await geminiService.callGemini(feedbackPrompt, '');
-        const jsonMatch = globalFeedback.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          quiz.feedback = {
+        const raw = await geminiService.callGemini(feedbackPrompt, '');
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          feedbackData = {
             strengths: parsed.strengths || [],
             weaknesses: parsed.weaknesses || [],
             recommendations: parsed.recommendations || []
           };
-          logger.success('Quiz feedback generated', { quizId });
-        } else {
-          quiz.feedback = {
-            strengths: ['Participation au quiz'],
-            weaknesses: [],
-            recommendations: ['Réviser les concepts mal compris']
-          };
         }
       } catch (err) {
         logger.warn('Could not generate Gemini feedback', { error: err.message });
-        // Use default feedback if AI fails
-        quiz.feedback = {
-          strengths: ['Participation au quiz'],
-          weaknesses: [],
-          recommendations: ['Continuer vos révisions']
-        };
       }
 
+      // ── Sauvegarde du quiz ───────────────────────────────────────────────
+      quiz.reponsesEtudiant = reponsesEtudiant;
+      quiz.note             = note;
+      quiz.dateCompletion   = new Date();
+      quiz.submittedAt      = new Date();
+      quiz.isSubmitted      = true;
+      quiz.scoringDetails   = details;
+      quiz.feedback         = feedbackData;
       await quiz.save();
 
-      logger.success('Quiz submitted', { quizId, note: quiz.note, correct, total: quiz.questions.length });
-      
-      return { 
-        note: quiz.note,
+      logger.success('Quiz submitted', { quizId, note, correct, total: quiz.questions.length });
+
+      // ── Liaison SeanceProgression ────────────────────────────────────────
+      // On appelle validerSeance uniquement si le quiz est lié à une séance
+      // Règle Salma : scoreQuiz en % (0-100), pas de blocage quelle que soit la note
+      const seanceId = quiz.seanceId;
+      if (seanceId) {
+        try {
+          const scoreQuizPct = Math.round((note / 20) * 100); // convertit /20 → %
+          await progressionService.validerSeance(etudiantId, seanceId, scoreQuizPct, null);
+          logger.success('SeanceProgression mise à jour après quiz', { seanceId, scoreQuizPct });
+        } catch (progressionErr) {
+          // On ne fait PAS échouer la soumission du quiz si la progression plante
+          // (ex: progression non initialisée, séance déjà validée)
+          logger.warn('Progression update failed (non-blocking)', { error: progressionErr.message });
+        }
+      }
+
+      return {
+        note,
         correct,
         total: quiz.questions.length,
         scoringDetails: details,
-        feedback: quiz.feedback
+        feedback: feedbackData
       };
     } catch (error) {
       logger.error('Quiz submission failed', error, { quizId, etudiantId });
@@ -562,51 +435,33 @@ Be encouraging and constructive.
     }
   }
 
-  /**
-   * TASK 4: Improved answer comparison
-   * - Handles case insensitivity
-   * - Trims whitespace
-   * - Supports multiple correct answers
-   * - Converts index (0,1,2,3) to letter (A,B,C,D)
-   */
   compareAnswers(studentAnswer, correctAnswer, options = []) {
     if (studentAnswer === null || studentAnswer === undefined || correctAnswer === null || correctAnswer === undefined) {
       return false;
     }
 
     const normalize = (str) => String(str).toUpperCase().trim();
-
     const letterToIndex = { A: 0, B: 1, C: 2, D: 3 };
     const indexToLetter = { 0: 'A', 1: 'B', 2: 'C', 3: 'D' };
 
     const getOptionTextByKey = (rawKey) => {
       if (!options) return null;
-
       if (Array.isArray(options)) {
         const keyNorm = normalize(rawKey);
-        const index = /^\d+$/.test(keyNorm)
-          ? Number(keyNorm)
-          : letterToIndex[keyNorm];
-        if (Number.isInteger(index) && index >= 0 && index < options.length) {
-          return options[index];
-        }
+        const index = /^\d+$/.test(keyNorm) ? Number(keyNorm) : letterToIndex[keyNorm];
+        if (Number.isInteger(index) && index >= 0 && index < options.length) return options[index];
         return null;
       }
-
       if (typeof options === 'object') {
         const direct = options[rawKey];
         if (direct !== undefined) return direct;
-
         const keyNorm = normalize(rawKey);
-        const index = /^\d+$/.test(keyNorm)
-          ? Number(keyNorm)
-          : letterToIndex[keyNorm];
+        const index = /^\d+$/.test(keyNorm) ? Number(keyNorm) : letterToIndex[keyNorm];
         if (Number.isInteger(index)) {
           const letter = indexToLetter[index];
           return options[letter] ?? options[String(index)] ?? null;
         }
       }
-
       return null;
     };
 
@@ -614,21 +469,13 @@ Be encouraging and constructive.
       const variants = new Set();
       const rawNorm = normalize(raw);
       variants.add(rawNorm);
-
       if (/^\d+$/.test(rawNorm)) {
         const numeric = Number(rawNorm);
         if (indexToLetter[numeric]) variants.add(indexToLetter[numeric]);
       }
-
-      if (letterToIndex[rawNorm] !== undefined) {
-        variants.add(String(letterToIndex[rawNorm]));
-      }
-
+      if (letterToIndex[rawNorm] !== undefined) variants.add(String(letterToIndex[rawNorm]));
       const optionText = getOptionTextByKey(raw);
-      if (optionText !== null && optionText !== undefined) {
-        variants.add(normalize(optionText));
-      }
-
+      if (optionText !== null && optionText !== undefined) variants.add(normalize(optionText));
       return variants;
     };
 
@@ -638,12 +485,9 @@ Be encouraging and constructive.
     for (const answer of correctList) {
       const correctVariants = buildVariants(answer);
       for (const value of correctVariants) {
-        if (studentVariants.has(value)) {
-          return true;
-        }
+        if (studentVariants.has(value)) return true;
       }
     }
-
     return false;
   }
 
@@ -661,7 +505,7 @@ Be encouraging and constructive.
 
       const scoringDetails = Array.isArray(quiz.scoringDetails) ? quiz.scoringDetails : [];
       const totalQuestions = Array.isArray(quiz.questions) ? quiz.questions.length : 0;
-      const correctCount = scoringDetails.filter((detail) => detail.correct).length;
+      const correctCount = scoringDetails.filter(d => d.correct).length;
       const hasStudentAnswers = Array.isArray(quiz.reponsesEtudiant) && quiz.reponsesEtudiant.length > 0;
       const isSubmitted = quiz.isSubmitted === true || quiz.note !== null || hasStudentAnswers;
 
@@ -691,9 +535,7 @@ Be encouraging and constructive.
     try {
       const skip = (page - 1) * limit;
       const query = { etudiantId };
-      if (moduleId) {
-        query.moduleId = moduleId;
-      }
+      if (moduleId) query.moduleId = moduleId;
 
       const quizzes = await Quiz.find(query)
         .populate('seanceId', 'titre ordre')

@@ -160,6 +160,8 @@ export const submodulesAPI = {
 export const seancesAPI = {
   getBySubModule: (subModuleId) => request(`/seances/submodule/${subModuleId}`),
 
+  getByModule: (moduleId) => request(`/seances/module/${moduleId}`),
+
   getById: (id) => request(`/seances/${id}`),
 
   create: (seanceData) => request('/seances', {
@@ -204,6 +206,8 @@ export const pdfsAPI = {
   },
   
   getById: (id) => request(`/pdfs/${id}`),
+
+  getBySubModule: (subModuleId) => request(`/pdfs/submodule/${subModuleId}`),
   
   download: async (id) => {
     try {
@@ -244,6 +248,20 @@ export const pdfsAPI = {
   
   delete: (id) => request(`/pdfs/${id}`, {
     method: 'DELETE'
+  })
+};
+
+// Progression des séances
+export const progressionAPI = {
+  getByModule: (moduleId) => request(`/progression/module/${moduleId}`),
+
+  getBySeance: (seanceId) => request(`/progression/seance/${seanceId}`),
+
+  verifierAcces: (seanceId) => request(`/progression/seance/${seanceId}/acces`),
+
+  valider: (seanceId, scoreQuiz, scoreExercice) => request(`/progression/seance/${seanceId}/valider`, {
+    method: 'POST',
+    body: { scoreQuiz, scoreExercice }
   })
 };
 

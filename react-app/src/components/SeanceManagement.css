@@ -1,0 +1,165 @@
+.seance-management {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sm-back-button {
+  background: #95a5a6;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.sm-back-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sm-actions {
+  margin-bottom: 1rem;
+}
+
+.sm-add-form,
+.sm-card,
+.sm-empty,
+.sm-inline-error {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sm-add-form {
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+.sm-form-input {
+  width: 100%;
+  padding: 0.7rem;
+  margin-bottom: 0.75rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.sm-form-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.sm-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.sm-card {
+  padding: 1rem 1.1rem;
+}
+
+.sm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sm-card-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.sm-type-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #ecf2ff;
+  color: #2752cc;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.sm-meta {
+  margin: 0.5rem 0 0.9rem;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.sm-card-actions {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.sm-edit-form {
+  margin-top: 0.9rem;
+  border-top: 1px solid #ecf0f1;
+  padding-top: 0.9rem;
+}
+
+.sm-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sm-btn:disabled,
+.sm-btn-disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sm-btn-primary {
+  background: #3498db;
+  color: #fff;
+}
+
+.sm-btn-secondary {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.sm-btn-danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.sm-btn-upload {
+  background: #2ecc71;
+  color: #fff;
+}
+
+.sm-hidden-input {
+  display: none;
+}
+
+.sm-loading,
+.sm-error {
+  text-align: center;
+  padding: 2rem;
+}
+
+.sm-error {
+  color: #e74c3c;
+}
+
+.sm-inline-error {
+  padding: 0.8rem 0.95rem;
+  margin-bottom: 1rem;
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.sm-empty {
+  padding: 1.2rem;
+  text-align: center;
+  color: #2c3e50;
+}

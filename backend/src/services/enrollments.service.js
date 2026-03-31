@@ -16,6 +16,7 @@ import mongoose from 'mongoose';
 import CourseModule from '../models/CourseModule.js';
 import User from '../models/User.js';
 import enrollmentRepository from '../repositories/enrollment.repository.js';
+import * as progressionService from './seanceProgression.service.js';
 import { ValidationError, ForbiddenError, NotFoundError } from '../utils/errorHandler.js';
 import logger from '../utils/logger.js';
 
@@ -154,7 +155,17 @@ class EnrollmentsService {
         moduleId: moduleIdObj,
         etudiantId: studentIdObj,
       });
-
+      
+      try {
+        console.log('=== Appel initialiserProgression ===')
+        console.log('studentIdObj:', studentIdObj.toString())
+        console.log('moduleIdObj:', moduleIdObj.toString())
+        await progressionService.initialiserProgression(studentIdObj, moduleIdObj);
+        console.log('=== initialiserProgression OK ===')
+      } catch (err) {
+        console.error('Progression init failed:', err.message)
+        console.error('Stack:', err.stack)
+      }
       logger.info('Student enrolled', { moduleId, studentId });
 
       return {

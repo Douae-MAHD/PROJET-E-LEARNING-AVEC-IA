@@ -1,0 +1,234 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --mv-bg: #0F1623;
+  --mv-card: #161E2E;
+  --mv-card-border: rgba(255, 255, 255, 0.06);
+  --mv-blue: #3B82F6;
+  --mv-green: #10B981;
+  --mv-text: #F1F5F9;
+  --mv-muted: #94A3B8;
+  --mv-font-serif: 'Playfair Display', Georgia, serif;
+  --mv-font-sans: 'DM Sans', sans-serif;
+}
+
+.sd-wrap {
+  min-height: 100vh;
+  background: var(--mv-bg);
+  background-image: radial-gradient(ellipse 80% 50% at 50% -5%, rgba(59, 130, 246, 0.1) 0%, transparent 65%);
+  padding: 2rem 1rem 4rem;
+  color: var(--mv-text);
+  font-family: var(--mv-font-sans);
+}
+
+.sd-container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sd-loading-screen,
+.sd-error-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--mv-bg);
+  color: var(--mv-text);
+}
+
+.sd-loader-ring {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top-color: var(--mv-blue);
+  border-radius: 50%;
+  animation: sd-spin 0.8s linear infinite;
+}
+
+.sd-dots::after {
+  content: '';
+  animation: sd-dots-anim 1.5s steps(3, end) infinite;
+}
+
+@keyframes sd-dots-anim {
+  0% { content: ''; }
+  33% { content: '.'; }
+  66% { content: '..'; }
+  100% { content: '...'; }
+}
+
+@keyframes sd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sd-error-icon {
+  font-size: 2.5rem;
+}
+
+.sd-error-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.sd-back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--mv-card-border);
+  color: var(--mv-muted);
+  border-radius: 8px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.sd-back-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sd-inline-error {
+  margin-bottom: 1rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+}
+
+.sd-header-card,
+.sd-section {
+  background: var(--mv-card);
+  border: 1px solid var(--mv-card-border);
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.sd-title {
+  margin: 0;
+  font-family: var(--mv-font-serif);
+  font-size: 1.8rem;
+  line-height: 1.2;
+}
+
+.sd-badges {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sd-badge {
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.sd-badge-type {
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+}
+
+.sd-badge-done {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+.sd-badge-current {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.sd-badge-locked {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+}
+
+.sd-meta {
+  margin: 0.8rem 0 0;
+  color: var(--mv-muted);
+}
+
+.sd-section-title {
+  margin: 0 0 0.8rem;
+  font-family: var(--mv-font-serif);
+  font-size: 1.2rem;
+}
+
+.sd-pdfs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.sd-pdf-item {
+  border: 1px solid var(--mv-card-border);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sd-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.sd-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sd-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sd-btn-primary {
+  background: var(--mv-blue);
+  color: #fff;
+}
+
+.sd-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--mv-text);
+  border: 1px solid var(--mv-card-border);
+}
+
+.sd-btn-big {
+  min-height: 48px;
+}
+
+.sd-empty {
+  color: var(--mv-muted);
+}
+
+.sd-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+}
+
+.sd-progress-item {
+  border: 1px solid var(--mv-card-border);
+  border-radius: 10px;
+  padding: 0.75rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sd-progress-item span {
+  color: var(--mv-muted);
+  font-size: 0.85rem;
+}
