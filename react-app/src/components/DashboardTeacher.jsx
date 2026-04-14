@@ -5,6 +5,11 @@ import CoursesManagementSection from './CoursesManagementSection'
 import AISection from './AISection'
 import FeedbacksViewSection from './FeedbacksViewSection'
 import './Dashboard.css'
+import CalendarSection from '../components/CalendarSection'
+import { seancesAPI } from '../services/api'
+
+
+
 
 // ─── Sections disponibles dans la sidebar ────────────────────────────────────
 const NAV_ITEMS = [
@@ -30,6 +35,14 @@ function DashboardTeacher() {
   const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   })
+  const [seances, setSeances] = useState([])
+
+
+ useEffect(() => {
+  seancesAPI.getByModules()
+    .then(setSeances)
+    .catch(console.error)
+}, [])
 
   // ── Animations d'entrée ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -269,6 +282,7 @@ function DashboardTeacher() {
           {activeSection === 'ai'        && <AISection userType="teacher" />}
           {activeSection === 'feedbacks' && <FeedbacksViewSection />}
         </div>
+        <CalendarSection seances={seances} userType="teacher" />
 
       </main>
     </div>

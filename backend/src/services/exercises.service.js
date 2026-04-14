@@ -292,7 +292,7 @@ export const submitExercise = async (exerciseId, studentId, reponse) => {
       logger.success('Gemini correction received', { exerciseId, note: correction.note });
     } catch (err) {
       logger.error('Gemini correction failed', err, { exerciseId });
-      correction.correction = 'Unable to process feedback at this time';
+      correction.correction = 'Correction IA indisponible temporairement. Une évaluation provisoire a été appliquée.';
     }
 
     exercise.note                = correction.note;

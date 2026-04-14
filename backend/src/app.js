@@ -20,7 +20,25 @@ app.use(mongoSanitize()); // Prevent NoSQL injection
 
 // CORS
 app.use(cors({
-  origin: config.cors.origin,
+  origin: (origin, callback) => {
+    // Allow server-to-server and same-origin requests with no Origin header.
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = Array.isArray(config.cors.origin)
+      ? config.cors.origin
+      : [config.cors.origin];
+
+    const isLocalhostDevOrigin = /^http:\/\/localhost:\d+$/.test(origin);
+    if (config.server.isDevelopment && isLocalhostDevOrigin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: config.cors.credentials
 }));
 
@@ -28,6 +46,13 @@ app.use(cors({
 const generalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
+  skip: (req) => {
+    // En développement, ne pas bloquer les appels fréquents (HMR, reload, etc.)
+    if (config.server.isDevelopment) return true;
+
+    // Éviter le double comptage avec authLimiter
+    return req.path.startsWith('/auth/login') || req.path.startsWith('/auth/register');
+  },
   handler: (req, res) => {
     res.status(429).json({
       error: {

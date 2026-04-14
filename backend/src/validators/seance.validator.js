@@ -2,6 +2,7 @@ import Joi from 'joi';
 import { ValidationError } from '../utils/errorHandler.js';
 
 const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;  // ← ADD THIS
 
 const schema = Joi.object({
   // moduleId — toujours requis
@@ -34,6 +35,15 @@ const schema = Joi.object({
     'any.required': 'Le type est requis',
   }),
 
+  // ✅ ADD THIS BLOCK:
+  startTime: Joi.string()
+    .pattern(timeRegex)
+    .required()
+    .messages({
+      'string.pattern.base': 'startTime doit être au format HH:mm (ex: 14:30)',
+      'any.required': 'startTime est obligatoire (format HH:mm, ex: 14:30)',
+    }),
+
   dateSeance: Joi.date().optional().allow(null).messages({
     'date.base': 'La date de séance est invalide',
   }),
@@ -47,7 +57,7 @@ const schema = Joi.object({
 export const validateSeance = (req, res, next) => {
   const { error } = schema.validate(req.body, {
     abortEarly: true,
-    stripUnknown: true,
+    stripUnknown: false,  // ← CHANGED: don't strip unknown to see what's missing
   });
   if (error) {
     throw new ValidationError(error.details[0].message);

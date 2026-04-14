@@ -341,8 +341,10 @@ export class QuizService {
         const question = quiz.questions.find(q => q._id?.toString() === response.questionId?.toString());
         if (!question) continue;
 
+        const studentAnswer = response.answer ?? response.reponse;
+
         const isCorrect = this.compareAnswers(
-          response.answer,
+          studentAnswer,
           question.correctAnswer,
           question.options
         );
@@ -351,7 +353,7 @@ export class QuizService {
         details.push({
           questionId: response.questionId,
           correct: isCorrect,
-          studentAnswer: response.answer,
+          studentAnswer,
           correctAnswer: question.correctAnswer,
           feedback: isCorrect ? 'Bonne réponse ✓' : `Bonne réponse: ${question.correctAnswer}`
         });

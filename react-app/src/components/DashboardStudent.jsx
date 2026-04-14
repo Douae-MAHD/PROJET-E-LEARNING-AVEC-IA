@@ -4,6 +4,8 @@ import CoursesSection from './CoursesSection'
 import AISection from './AISection'
 import FeedbackSection from './FeedbackSection'
 import './Dashboard.css'
+import CalendarSection from './CalendarSection'
+import { seancesAPI } from '../services/api'
 
 /* ── Helpers ─────────────────────────────────────── */
 const QUOTES = [
@@ -68,7 +70,20 @@ function DashboardStudent() {
   const filiere   = user.filiere || user.specialite || 'EM Mines Paris'
   const initials  = getInitials(fullName)
   const avatarBg  = hashColor(fullName)
+  const [seances, setSeances] = useState([])
 
+ useEffect(() => {
+  console.log("🚀 Fetching ALL seances...")
+
+  seancesAPI.getAll()
+    .then((data) => {
+      console.log("✅ Seances received:", data)
+      setSeances(data)
+    })
+    .catch((err) => {
+      console.error("❌ Error fetching seances:", err)
+    })
+}, [])
   /* Date */
   const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -226,7 +241,7 @@ function DashboardStudent() {
 
         {/* Bloc 5 — Feedback info */}
         <FeedbackSection userType="student" />
-
+        <CalendarSection seances={seances} userType="student" />
       </main>
     </div>
   )

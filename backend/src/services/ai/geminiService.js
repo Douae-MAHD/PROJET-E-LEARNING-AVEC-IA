@@ -41,6 +41,76 @@ export class GeminiService {
   }
 
   /**
+   * Extract and parse JSON from a model response that may include markdown fences.
+   */
+  parseJsonFromResponse(responseText) {
+    const candidates = [];
+    const raw = String(responseText || '').trim();
+
+    if (raw) candidates.push(raw);
+
+    const jsonFence = raw.match(/```json\s*([\s\S]*?)```/i);
+    if (jsonFence?.[1]) candidates.push(jsonFence[1].trim());
+
+    const anyFence = raw.match(/```\s*([\s\S]*?)```/);
+    if (anyFence?.[1]) candidates.push(anyFence[1].trim());
+
+    const firstBrace = raw.indexOf('{');
+    const lastBrace = raw.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      candidates.push(raw.slice(firstBrace, lastBrace + 1));
+    }
+
+    let lastError = null;
+    for (const candidate of candidates) {
+      try {
+        return JSON.parse(candidate);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    throw new ServiceError(`Invalid JSON format from Gemini: ${lastError?.message || 'parse failed'}`);
+  }
+
+  /**
+   * Fallback correction when Gemini is unavailable or returns invalid output.
+   */
+  generateFallbackCorrection(studentAnswer = '', language = 'fr') {
+    const answer = String(studentAnswer || '').trim();
+    const wordCount = answer ? answer.split(/\s+/).length : 0;
+
+    const note = wordCount >= 30 ? 12 : wordCount >= 15 ? 9 : wordCount > 0 ? 6 : 0;
+
+    const appreciation = language === 'fr'
+      ? (wordCount > 0
+        ? 'Correction automatique de secours: réponse reçue, continuez à détailler les idées clés.'
+        : 'Aucune réponse détectée. Merci de rédiger une réponse pour obtenir une évaluation complète.')
+      : (wordCount > 0
+        ? 'Fallback auto-correction: answer received, try to add more key ideas.'
+        : 'No answer detected. Please provide an answer for full evaluation.');
+
+    const correction = language === 'fr'
+      ? 'Le moteur IA principal est indisponible temporairement. Une note provisoire a été attribuée selon la complétude de la réponse.'
+      : 'Primary AI engine is temporarily unavailable. A provisional score was assigned based on response completeness.';
+
+    return {
+      note,
+      appreciation,
+      correction,
+      points_forts: wordCount > 0
+        ? [language === 'fr' ? 'Réponse fournie' : 'Answer provided']
+        : [],
+      points_amelioration: [
+        language === 'fr' ? 'Structurer la réponse en idées clés' : 'Structure the answer around key ideas',
+        language === 'fr' ? 'Ajouter des termes du cours' : 'Include more course concepts'
+      ],
+      generatedAt: new Date(),
+      isFallback: true
+    };
+  }
+
+  /**
    * Check if API is available
    */
   isAvailable() {
@@ -241,28 +311,99 @@ export class GeminiService {
       };
     } catch (error) {
       logger.warn('Exercise generation failed, using fallback mock exercises', { error: error.message });
-      // Fallback: generate mock exercises for testing/development
-      return this.generateMockExercises(language);
+      // Fallback: generate context-aware exercises from course text
+      return this.generateFallbackExercisesFromText(pdfText, language);
     }
   }
 
   /**
-   * Generate mock exercises for development/testing when API unavailable
+   * Generate context-aware fallback exercises when API is unavailable.
    */
-  generateMockExercises(language = 'fr') {
-    logger.info('Generating mock exercises (development fallback)');
-    const exercises = [
-      {
-        enonce: language === 'fr' ? 'Expliquez le cycle de l\'eau en 3-4 phrases.' : 'Explain the water cycle in 3-4 sentences.',
-        type: 'open',
-        difficulty: 'medium'
-      },
-      {
-        enonce: language === 'fr' ? 'Résolvez l\'équation: 2x + 5 = 13' : 'Solve the equation: 2x + 5 = 13',
-        type: 'problem',
-        difficulty: 'easy'
-      }
-    ];
+  generateFallbackExercisesFromText(pdfText = '', language = 'fr') {
+    logger.info('Generating context-aware fallback exercises (development fallback)');
+
+    const text = String(pdfText || '');
+    const lower = text.toLowerCase();
+
+    const detectTopic = () => {
+      if (lower.includes('jdbc') || lower.includes('sql') || lower.includes('drivermanager')) return 'jdbc';
+      if (lower.includes('kubernetes') || lower.includes('k8s') || lower.includes('pod')) return 'kubernetes';
+      if (lower.includes('authentification') || lower.includes('jwt') || lower.includes('oauth')) return 'auth';
+      return 'generic';
+    };
+
+    const topic = detectTopic();
+    let exercises;
+
+    if (topic === 'jdbc') {
+      exercises = [
+        {
+          enonce: language === 'fr'
+            ? 'Expliquez le role de JDBC et la difference entre API JDBC et pilote JDBC en 4-5 phrases.'
+            : 'Explain JDBC purpose and the difference between JDBC API and JDBC driver in 4-5 sentences.',
+          type: 'open',
+          difficulty: 'medium'
+        },
+        {
+          enonce: language === 'fr'
+            ? 'Donnez les etapes pour etablir une connexion JDBC (DriverManager, Connection, Statement) puis executer une requete SQL simple.'
+            : 'Provide the steps to create a JDBC connection (DriverManager, Connection, Statement) and execute a simple SQL query.',
+          type: 'practical',
+          difficulty: 'medium'
+        }
+      ];
+    } else if (topic === 'kubernetes') {
+      exercises = [
+        {
+          enonce: language === 'fr'
+            ? 'Comparez Pod, Deployment et Service en precisant le role de chacun dans un cluster Kubernetes.'
+            : 'Compare Pod, Deployment and Service and explain each role in a Kubernetes cluster.',
+          type: 'open',
+          difficulty: 'medium'
+        },
+        {
+          enonce: language === 'fr'
+            ? 'Proposez un mini plan de deploiement d\'une application web sur Kubernetes avec scalabilite et exposition reseau.'
+            : 'Propose a small deployment plan for a web app on Kubernetes including scaling and network exposure.',
+          type: 'practical',
+          difficulty: 'medium'
+        }
+      ];
+    } else if (topic === 'auth') {
+      exercises = [
+        {
+          enonce: language === 'fr'
+            ? 'Expliquez la difference entre authentification et autorisation, avec un exemple d\'utilisation de JWT.'
+            : 'Explain the difference between authentication and authorization, with a JWT usage example.',
+          type: 'open',
+          difficulty: 'medium'
+        },
+        {
+          enonce: language === 'fr'
+            ? 'Decrivez un flux de connexion securise (login, emission du token, verification, expiration).' 
+            : 'Describe a secure login flow (login, token issuance, verification, expiration).',
+          type: 'practical',
+          difficulty: 'medium'
+        }
+      ];
+    } else {
+      exercises = [
+        {
+          enonce: language === 'fr'
+            ? 'Resumez les concepts cles du cours et expliquez leur utilite pratique en 5-6 phrases.'
+            : 'Summarize key concepts from the course and explain their practical value in 5-6 sentences.',
+          type: 'open',
+          difficulty: 'medium'
+        },
+        {
+          enonce: language === 'fr'
+            ? 'Proposez un cas d\'application concret base sur le contenu du cours et decrivez la solution.'
+            : 'Propose a concrete use case based on the course content and describe a solution approach.',
+          type: 'practical',
+          difficulty: 'medium'
+        }
+      ];
+    }
 
     return {
       exercises,
@@ -270,7 +411,7 @@ export class GeminiService {
         language,
         generatedAt: new Date(),
         isMock: true,
-        reason: 'Gemini API quota exceeded - using fallback'
+        reason: 'Gemini API unavailable - using context-aware fallback'
       }
     };
   }
@@ -287,12 +428,7 @@ export class GeminiService {
 
       const responseText = await this.callGemini(prompt, systemPrompt);
 
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new ServiceError('Invalid response format from Gemini');
-      }
-
-      const correction = JSON.parse(jsonMatch[0]);
+      const correction = this.parseJsonFromResponse(responseText);
       logger.success(`Exercise corrected: score ${correction.note}/20`);
 
       return {
@@ -304,8 +440,10 @@ export class GeminiService {
         generatedAt: new Date()
       };
     } catch (error) {
-      logger.error('Exercise correction failed', error);
-      throw new ServiceError('Failed to correct exercise', error);
+      logger.warn('Exercise correction failed, using fallback correction', {
+        message: error.message,
+      });
+      return this.generateFallbackCorrection(studentAnswer, language);
     }
   }
 

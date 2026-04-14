@@ -14,12 +14,14 @@ function SeanceManagement() {
     titre: '',
     type: 'presentielle',
     dateSeance: '',
+    startTime: '',
     duree: ''
   })
   const [editSeance, setEditSeance] = useState({
     titre: '',
     type: 'presentielle',
     dateSeance: '',
+    startTime: '',
     duree: ''
   })
   const [uploading, setUploading] = useState(false)
@@ -61,6 +63,11 @@ function SeanceManagement() {
         return
       }
 
+      if (!newSeance.startTime) {
+        alert('L\'heure de début est requise')
+        return
+      }
+
       setCreating(true)
       setError('')
 
@@ -69,6 +76,7 @@ function SeanceManagement() {
         titre: newSeance.titre.trim(),
         type: newSeance.type,
         ...(newSeance.dateSeance ? { dateSeance: newSeance.dateSeance } : {}),
+        startTime: newSeance.startTime,
         ...(newSeance.duree ? { duree: Number(newSeance.duree) } : {})
       }
 
@@ -76,7 +84,7 @@ function SeanceManagement() {
 
       alert('Séance créée avec succès')
       setShowAddForm(false)
-      setNewSeance({ titre: '', type: 'presentielle', dateSeance: '', duree: '' })
+      setNewSeance({ titre: '', type: 'presentielle', dateSeance: '', startTime: '', duree: '' })
       await loadSeances()
     } catch (err) {
       setError(err.message || 'Erreur lors de la création de la séance')
@@ -91,6 +99,7 @@ function SeanceManagement() {
       titre: seance.titre || '',
       type: seance.type || 'presentielle',
       dateSeance: toInputDate(seance.dateSeance),
+      startTime: seance.startTime || '',
       duree: seance.duree ?? ''
     })
   }
@@ -104,6 +113,11 @@ function SeanceManagement() {
         return
       }
 
+      if (!editSeance.startTime) {
+        alert('L\'heure de début est requise')
+        return
+      }
+
       setSavingEdit(true)
       setError('')
 
@@ -111,6 +125,7 @@ function SeanceManagement() {
         titre: editSeance.titre.trim(),
         type: editSeance.type,
         ...(editSeance.dateSeance ? { dateSeance: editSeance.dateSeance } : { dateSeance: null }),
+        startTime: editSeance.startTime,
         ...(editSeance.duree ? { duree: Number(editSeance.duree) } : { duree: null })
       }
 
@@ -219,6 +234,18 @@ function SeanceManagement() {
             disabled={isBusy}
           />
 
+          <label className="sm-form-label">
+            Heure de début
+          </label>
+
+          <input
+            type="time"
+            className="sm-form-input"
+            value={newSeance.startTime}
+            onChange={(event) => setNewSeance({ ...newSeance, startTime: event.target.value })}
+            disabled={isBusy}
+          />
+
           <input
             type="number"
             min="1"
@@ -308,6 +335,18 @@ function SeanceManagement() {
                       className="sm-form-input"
                       value={editSeance.dateSeance}
                       onChange={(event) => setEditSeance({ ...editSeance, dateSeance: event.target.value })}
+                      disabled={isBusy}
+                    />
+
+                    <label className="sm-form-label">
+                      Heure de début
+                    </label>
+
+                    <input
+                      type="time"
+                      className="sm-form-input"
+                      value={editSeance.startTime}
+                      onChange={(event) => setEditSeance({ ...editSeance, startTime: event.target.value })}
                       disabled={isBusy}
                     />
 

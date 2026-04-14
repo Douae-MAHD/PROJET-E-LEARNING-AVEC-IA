@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { quizAPI } from '../services/api'
+import { useSessionLogger } from '../hooks/useSessionLogger'
 import './QuizView.css'
 
 function QuizView() {
@@ -17,6 +18,17 @@ function QuizView() {
   const [error, setError] = useState('')
   const [showDetails, setShowDetails] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const sessionStartedRef = useRef(false)
+
+  const resolvedSeanceId =
+    typeof quiz?.seanceId === 'object'
+      ? quiz?.seanceId?._id
+      : quiz?.seanceId
+
+  const sessionLogger = useSessionLogger({
+    seanceId: resolvedSeanceId || null,
+    assessmentType: 'quiz'
+  })
 
   const getOptionTextByKey = (question, key) => {
     const options = question?.options
@@ -119,6 +131,12 @@ function QuizView() {
     loadQuiz()
   }, [quizId])
 
+  useEffect(() => {
+    if (!quiz || submitted || sessionStartedRef.current) return
+    sessionLogger.startSession()
+    sessionStartedRef.current = true
+  }, [quiz, submitted, sessionLogger])
+
   const loadQuiz = async () => {
     try {
       setLoading(true)
@@ -203,6 +221,15 @@ function QuizView() {
   }
 
   const handleAnswerChange = (questionIndex, answer) => {
+    const previousAnswer = answers[questionIndex]
+    const question = quiz?.questions?.[questionIndex]
+    const questionId = question?._id || question?.id || questionIndex
+
+    if (previousAnswer !== undefined && previousAnswer !== answer) {
+      sessionLogger.logRetryWrongAnswer({ questionId })
+    }
+
+    sessionLogger.logAnswer({ questionId, correctness: null })
     setAnswers({ ...answers, [questionIndex]: answer })
   }
 
@@ -236,6 +263,16 @@ function QuizView() {
       }
       setResult(normalizedResult)
       setSubmitted(true)
+
+      const correctnessRatio = normalizedResult.total > 0
+        ? normalizedResult.correct / normalizedResult.total
+        : 0
+
+      try {
+        await sessionLogger.flushSession({ correctness: correctnessRatio })
+      } catch (logErr) {
+        console.warn('Session logging failed (non-blocking):', logErr?.message)
+      }
     } catch (err) {
       if (err.message && err.message.includes('already submitted')) {
         setSubmitted(true)

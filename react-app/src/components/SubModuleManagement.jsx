@@ -148,7 +148,7 @@ function SubModuleDetail({ moduleId, subModule, onBack }) {
   const [selectedSeanceId, setSelectedSeanceId] = useState('')
   const [showAddSeance,    setShowAddSeance]    = useState(false)
   const [newSeance,        setNewSeance]        = useState({
-    titre: '', type: 'presentielle', dateSeance: '', duree: '',
+    titre: '', type: 'presentielle', dateSeance: '', startTime: '', duree: '', // ✅ Added startTime
   })
   const [uploading,  setUploading]  = useState(false)
   const [creating,   setCreating]   = useState(false)
@@ -169,15 +169,18 @@ function SubModuleDetail({ moduleId, subModule, onBack }) {
 
   const handleCreateSeance = async () => {
     if (!newSeance.titre.trim()) { alert('Le titre est requis'); return }
+    if (!newSeance.startTime) { alert('L\'heure de début est requise'); return } // ✅ Added validation
+    
     try {
       setCreating(true)
       await seancesAPI.create({
         moduleId, subModuleId: subModule._id,
         titre: newSeance.titre.trim(), type: newSeance.type,
+        startTime: newSeance.startTime, // ✅ Added startTime to payload
         ...(newSeance.dateSeance ? { dateSeance: newSeance.dateSeance } : {}),
         ...(newSeance.duree ? { duree: Number(newSeance.duree) } : {}),
       })
-      setNewSeance({ titre: '', type: 'presentielle', dateSeance: '', duree: '' })
+      setNewSeance({ titre: '', type: 'presentielle', dateSeance: '', startTime: '', duree: '' }) // ✅ Reset startTime
       setShowAddSeance(false)
       await loadSeances()
     } catch (err) { setError(err.message) }
@@ -294,7 +297,9 @@ function SubModuleDetail({ moduleId, subModule, onBack }) {
               <Field label="Titre" icon="📌" placeholder="Ex: Introduction aux variables"
                 value={newSeance.titre}
                 onChange={e => setNewSeance({ ...newSeance, titre: e.target.value })} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+              
+              {/* ✅ Changed to 4 columns to fit startTime */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   <label style={{
                     fontSize: '0.75rem', color: 'var(--text-secondary)',
@@ -314,6 +319,12 @@ function SubModuleDetail({ moduleId, subModule, onBack }) {
                     <option value="distanciel">💻 Distanciel</option>
                   </select>
                 </div>
+                
+                {/* ✅ Added startTime field */}
+                <Field label="Heure début" icon="🕐" type="time"
+                  value={newSeance.startTime}
+                  onChange={e => setNewSeance({ ...newSeance, startTime: e.target.value })} />
+                
                 <Field label="Durée (min)" icon="⏱" type="number" min="1" placeholder="90"
                   value={newSeance.duree}
                   onChange={e => setNewSeance({ ...newSeance, duree: e.target.value })} />
@@ -394,6 +405,7 @@ function SubModuleDetail({ moduleId, subModule, onBack }) {
                         fontFamily: 'var(--font-mono)', marginTop: 2,
                       }}>
                         {s.dateSeance ? new Date(s.dateSeance).toLocaleDateString('fr-FR') : '—'}
+                        {s.startTime ? ` · ${s.startTime}` : ''} {/* ✅ Display startTime */}
                         {s.duree ? ` · ${s.duree} min` : ''}
                       </div>
                     </div>

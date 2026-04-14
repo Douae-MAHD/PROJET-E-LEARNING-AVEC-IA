@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { exercisesAPI } from '../services/api'
+import { useSessionLogger } from '../hooks/useSessionLogger'
 import './ExerciseView.css'
 
 function ExerciseView() {
@@ -15,9 +16,24 @@ function ExerciseView() {
   const [error, setError] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
+  const resolvedSeanceId =
+    typeof exercise?.seanceId === 'object'
+      ? exercise?.seanceId?._id
+      : exercise?.seanceId
+
+  const sessionLogger = useSessionLogger({
+    seanceId: resolvedSeanceId || null,
+    assessmentType: 'exercise'
+  })
+
   useEffect(() => {
     loadExercise()
   }, [exerciseId])
+
+  useEffect(() => {
+    if (!exercise || submitted) return
+    sessionLogger.startSession()
+  }, [exercise, submitted, sessionLogger])
 
   const loadExercise = async () => {
     try {
@@ -69,6 +85,8 @@ function ExerciseView() {
       setError('')
       const data = await exercisesAPI.submit(exerciseId, answer)
 
+      sessionLogger.logAnswer({ questionId: exerciseId, correctness: null })
+
       if (data.correction && typeof data.correction === 'object') {
         const c = data.correction
         setResult({
@@ -88,6 +106,17 @@ function ExerciseView() {
         })
       }
       setSubmitted(true)
+
+      const rawNote = data?.note ?? data?.correction?.note ?? null
+      const correctnessRatio = rawNote !== null && rawNote !== undefined
+        ? Math.max(0, Math.min(1, Number(rawNote) / 20))
+        : 0
+
+      try {
+        await sessionLogger.flushSession({ correctness: correctnessRatio })
+      } catch (logErr) {
+        console.warn('Session logging failed (non-blocking):', logErr?.message)
+      }
     } catch (err) {
       setError(err.message)
     } finally {

@@ -45,7 +45,13 @@
   border-radius: 4px;
   font-size: 1rem;
 }
-
+.sm-form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
 .sm-form-actions {
   display: flex;
   gap: 0.6rem;

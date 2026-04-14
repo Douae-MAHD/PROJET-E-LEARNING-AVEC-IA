@@ -15,6 +15,20 @@ router.post(
 
 // ── Lecture ─────────────────────────────────────────────────
 
+// Route pour récupérer TOUTES les séances
+router.get(
+  '/',
+  authenticateToken,
+  seanceController.getAllSeances
+);
+
+// Séances de tous les modules du professeur connecté
+router.get(
+  '/modules',
+  authenticateToken,
+  seanceController.getSeancesByModules
+);
+
 // IMPORTANT : routes spécifiques AVANT routes génériques /:id
 // Sinon Express interprète 'submodule' et 'module' comme un :id
 
@@ -38,6 +52,7 @@ router.get(
   authenticateToken,
   seanceController.getSeanceById
 );
+
 
 // ── Modification ────────────────────────────────────────────
 router.put(

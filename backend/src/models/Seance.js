@@ -42,6 +42,15 @@ const seanceSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    startTime: {
+      type: String,
+      required: [true, 'L\'heure de début (startTime) est requise'],
+      match: [
+        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+        'startTime doit être au format HH:mm (ex: 14:30)',
+      ],
+      trim: true,
+    },
     duree: {
       type: Number,
       default: null,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { seancesAPI, pdfsAPI, progressionAPI } from '../services/api'
+import { seancesAPI, pdfsAPI, progressionAPI, quizAPI, exercisesAPI } from '../services/api'
 import './SeanceDetail.css'
 
 function SeanceDetail() {
@@ -98,9 +98,20 @@ function SeanceDetail() {
         alert('🔒 Accès refusé. Validez la séance précédente.')
         return
       }
-      navigate(`/quiz/seance/${seanceId}`)
+
+      const response = await quizAPI.generateForSeance(seanceId)
+      const quizId = response?._id || response?.quizId || response?.quiz?._id
+      if (!quizId) {
+        throw new Error('Impossible de récupérer le quiz généré')
+      }
+
+      if (response?.isExisting && response?.isSubmitted) {
+        navigate(`/quiz/${quizId}?showFeedbackOnly=true`)
+      } else {
+        navigate(`/quiz/${quizId}`)
+      }
     } catch (err) {
-      alert('🔒 Accès refusé par le serveur.')
+      alert(err?.message || 'Erreur lors de la génération du quiz.')
     } finally {
       setCheckingAccess(false)
     }
@@ -115,9 +126,18 @@ function SeanceDetail() {
         alert('🔒 Accès refusé. Validez la séance précédente.')
         return
       }
-      navigate(`/exercise/seance/${seanceId}`)
+
+      const response = await exercisesAPI.generateForSeance(seanceId)
+      const exercises = Array.isArray(response) ? response : (response?.exercises || [])
+      const firstExerciseId = exercises?.[0]?._id || exercises?.[0]?.id
+
+      if (!firstExerciseId) {
+        throw new Error('Aucun exercice généré pour cette séance')
+      }
+
+      navigate(`/exercise/${firstExerciseId}`)
     } catch (err) {
-      alert('🔒 Accès refusé par le serveur.')
+      alert(err?.message || 'Erreur lors de la génération de l\'exercice.')
     } finally {
       setCheckingAccess(false)
     }

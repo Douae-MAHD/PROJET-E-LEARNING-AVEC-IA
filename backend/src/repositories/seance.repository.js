@@ -20,3 +20,9 @@ export const deleteById = async (id) => {
 };
 
 export const findNextSeance = (subModuleId, ordre) => Seance.getNext(subModuleId, ordre);
+
+export const findAll = () => Seance.find().lean();
+
+export const findByModuleIds = (moduleIds) => Seance.find({
+  moduleId: { $in: moduleIds },
+}).sort({ dateSeance: 1, startTime: 1, ordre: 1 }).lean();

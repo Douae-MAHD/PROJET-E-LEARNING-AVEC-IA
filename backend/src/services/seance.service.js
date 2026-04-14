@@ -1,10 +1,45 @@
 import SubModule from '../models/SubModule.js';
 import CourseModule from '../models/CourseModule.js';
 import * as seanceRepository from '../repositories/seance.repository.js';
-import { NotFoundError, ValidationError } from '../utils/errorHandler.js';
+import { ForbiddenError, NotFoundError, ValidationError } from '../utils/errorHandler.js';
+
+// ── Validation Helpers ──────────────────────────────────────
+/**
+ * Valide que startTime est au format HH:mm (00:00 à 23:59)
+ * @param {string} startTime - La valeur à valider
+ * @returns {boolean} true si valide
+ */
+const isValidStartTime = (startTime) => {
+  if (!startTime || typeof startTime !== 'string') return false;
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(startTime);
+};
+
+/**
+ * Valide et extrait startTime des données
+ * @param {object} data - Les données de la séance
+ * @throws {ValidationError} si startTime est invalide ou manquante
+ */
+const validateStartTime = (data) => {
+  if (!data.startTime) {
+    throw new ValidationError('startTime est obligatoire (format HH:mm, ex: 14:30)');
+  }
+
+  if (!isValidStartTime(data.startTime)) {
+    throw new ValidationError(
+      `startTime invalide. Format attendu: HH:mm (ex: 14:30), reçu: ${data.startTime}`
+    );
+  }
+
+  // Normaliser: trimmer et formater correctement
+  return data.startTime.trim();
+};
 
 // ── Créer une séance ────────────────────────────────────────
 export const createSeance = async (data) => {
+  // Valider startTime (obligatoire)
+  const validatedStartTime = validateStartTime(data);
+  
   // moduleId toujours requis
   const module = await CourseModule.findById(data.moduleId)
     .select('_id').lean();
@@ -17,7 +52,13 @@ export const createSeance = async (data) => {
     if (!subModule) throw new NotFoundError('Sous-module');
   }
 
-  return seanceRepository.create(data);
+  // Passer les données validées au repository
+  const seanceData = {
+    ...data,
+    startTime: validatedStartTime,
+  };
+
+  return seanceRepository.create(seanceData);
 };
 
 // ── Récupérer séances d'un SubModule ────────────────────────
@@ -56,6 +97,12 @@ export const updateSeance = async (id, data) => {
     throw new ValidationError('Le module ne peut pas être modifié');
   }
 
+  // Valider startTime si fourni
+  if (Object.prototype.hasOwnProperty.call(data, 'startTime')) {
+    const validatedStartTime = validateStartTime(data);
+    data.startTime = validatedStartTime;
+  }
+
   const existing = await seanceRepository.findById(id);
   if (!existing) throw new NotFoundError('Séance');
 
@@ -67,4 +114,31 @@ export const deleteSeance = async (id) => {
   const deleted = await seanceRepository.deleteById(id);
   if (!deleted) throw new NotFoundError('Séance');
   return deleted;
+};
+
+// ── Récupérer toutes les séances ────────────────────────────
+export const getAllSeances = async () => {
+  return seanceRepository.findAll();
+};
+
+// ── Récupérer séances des modules du professeur connecté ──
+export const getSeancesByProfessorModules = async (user) => {
+  if (!user?.id) {
+    throw new ValidationError('Utilisateur non authentifié');
+  }
+
+  if (user.role !== 'professeur') {
+    throw new ForbiddenError('Accès réservé aux professeurs');
+  }
+
+  const modules = await CourseModule.find({ professorId: user.id })
+    .select('_id')
+    .lean();
+
+  const moduleIds = modules.map((module) => module._id);
+  if (moduleIds.length === 0) {
+    return [];
+  }
+
+  return seanceRepository.findByModuleIds(moduleIds);
 };

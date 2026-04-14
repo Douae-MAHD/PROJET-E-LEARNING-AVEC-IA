@@ -9,6 +9,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const parseCorsOrigins = (raw) => {
+  if (!raw) {
+    return ['http://localhost:5173', 'http://localhost:5174'];
+  }
+
+  return String(raw)
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
 // Required environment variables
 const requiredEnvVars = ['JWT_SECRET', 'GEMINI_API_KEY', 'MONGODB_URI'];
 
@@ -64,6 +75,13 @@ export const config = {
     timeout: 30000
   },
 
+  // CT assessment engine (FastAPI)
+  ctEngine: {
+    baseUrl: process.env.CT_ENGINE_URL || 'http://localhost:8000',
+    scoreEndpoint: process.env.CT_SCORE_ENDPOINT || '/score/student',
+    timeoutMs: parseInt(process.env.CT_ENGINE_TIMEOUT_MS, 10) || 4000
+  },
+
   // File upload configuration
   upload: {
     dir: process.env.UPLOAD_DIR || './uploads/pdfs',
@@ -73,7 +91,7 @@ export const config = {
 
   // CORS configuration
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: parseCorsOrigins(process.env.CORS_ORIGIN),
     credentials: true
   },
 

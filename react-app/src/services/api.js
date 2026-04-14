@@ -158,10 +158,12 @@ export const submodulesAPI = {
 
 // Séances
 export const seancesAPI = {
+  getAll: () => request('/seances'), // ✅ ADD THIS
+
+  getByModules: () => request('/seances/modules'),
+
   getBySubModule: (subModuleId) => request(`/seances/submodule/${subModuleId}`),
-
   getByModule: (moduleId) => request(`/seances/module/${moduleId}`),
-
   getById: (id) => request(`/seances/${id}`),
 
   create: (seanceData) => request('/seances', {
@@ -360,6 +362,14 @@ export const enrollmentsAPI = {
   enrollMultipleStudents: (moduleId, studentIds) => request(`/enrollments/module/${moduleId}/students`, {
     method: 'POST',
     body: { studentIds }
+  })
+};
+
+// CT / Learning analytics batch scoring
+export const ctAPI = {
+  scoreStudent: (sessionPayload) => request('/score/student', {
+    method: 'POST',
+    body: sessionPayload
   })
 };
 

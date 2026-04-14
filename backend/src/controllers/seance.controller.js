@@ -8,6 +8,7 @@ export const createSeance = asyncHandler(async (req, res) => {
 });
 
 export const getSeancesBySubModule = asyncHandler(async (req, res) => {
+  
   const result = await seanceService.getSeancesBySubModule(req.params.subModuleId);
   sendSuccess(res, result, 'Séances récupérées');
 });
@@ -30,4 +31,14 @@ export const deleteSeance = asyncHandler(async (req, res) => {
 export const getSeancesByModule = asyncHandler(async (req, res) => {
   const result = await seanceService.getSeancesByModule(req.params.moduleId);
   sendSuccess(res, result, 'Séances récupérées');
+});
+
+export const getAllSeances = asyncHandler(async (req, res) => {
+  const result = await seanceService.getAllSeances();
+  sendSuccess(res, result, 'Toutes les séances récupérées');
+});
+
+export const getSeancesByModules = asyncHandler(async (req, res) => {
+  const result = await seanceService.getSeancesByProfessorModules(req.user);
+  sendSuccess(res, result, 'Séances des modules du professeur récupérées');
 });

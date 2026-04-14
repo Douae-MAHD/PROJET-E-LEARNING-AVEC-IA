@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-03-06T14:39:52.201Z",
+  "counts": {
+    "seances": 6,
+    "progressions": 0,
+    "enrollments": 5
+  },
+  "seances": [
+    {
+      "_id": "69a8326a063c3a2d1bd5ece2",
+      "subModuleId": "69a82e0064d6c2ccc461eb5d",
+      "titre": "les listes",
+      "ordre": 1,
+      "type": "distanciel",
+      "dateSeance": "2026-03-14T00:00:00.000Z",
+      "duree": 1,
+      "sections": [],
+      "createdAt": "2026-03-04T13:23:54.026Z",
+      "updatedAt": "2026-03-04T13:23:54.026Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a999885f83246ee8f9b5a9",
+      "subModuleId": "69a9991b5f83246ee8f9b5a6",
+      "titre": "Séance 1 — Introduction aux tableaux",
+      "ordre": 1,
+      "type": "presentielle",
+      "dateSeance": "2026-03-10T00:00:00.000Z",
+      "duree": 90,
+      "sections": [],
+      "createdAt": "2026-03-05T14:56:08.703Z",
+      "updatedAt": "2026-03-05T14:56:08.703Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a99a145f83246ee8f9b5ad",
+      "subModuleId": "69a9991b5f83246ee8f9b5a6",
+      "titre": "Séance 2 — Approfondissement",
+      "ordre": 2,
+      "type": "distanciel",
+      "dateSeance": null,
+      "duree": 60,
+      "sections": [],
+      "createdAt": "2026-03-05T14:58:28.170Z",
+      "updatedAt": "2026-03-05T14:58:28.170Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a99e1b5f83246ee8f9b62a",
+      "subModuleId": "69a99de65f83246ee8f9b60c",
+      "titre": "how to identify system vulnerabilities",
+      "ordre": 1,
+      "type": "presentielle",
+      "dateSeance": "2026-03-13T00:00:00.000Z",
+      "duree": 57,
+      "sections": [],
+      "createdAt": "2026-03-05T15:15:39.288Z",
+      "updatedAt": "2026-03-05T15:15:39.288Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a99e6d5f83246ee8f9b656",
+      "subModuleId": "69a99de65f83246ee8f9b60c",
+      "titre": "Covering key areas like Kali Linux, network scanning, and social engineering.",
+      "ordre": 2,
+      "type": "presentielle",
+      "dateSeance": "2026-03-19T00:00:00.000Z",
+      "duree": 60,
+      "sections": [],
+      "createdAt": "2026-03-05T15:17:01.252Z",
+      "updatedAt": "2026-03-05T15:17:01.252Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a9f8581a33c5ead12e1165",
+      "moduleId": "69a9f4c91a33c5ead12e10c6",
+      "subModuleId": "69a9f5091a33c5ead12e10ee",
+      "titre": "UML Cours 1 : Diagrammes de cas d'utilisation",
+      "ordre": 1,
+      "type": "presentielle",
+      "dateSeance": "2026-03-19T00:00:00.000Z",
+      "duree": null,
+      "sections": [],
+      "createdAt": "2026-03-05T21:40:40.176Z",
+      "updatedAt": "2026-03-05T21:40:40.176Z",
+      "__v": 0
+    }
+  ],
+  "progressions": [],
+  "enrollments": [
+    {
+      "_id": "699878f6f331227077199fc4",
+      "moduleId": "699878f2f331227077199fac",
+      "etudiantId": "699875ae32588c9b771cbbe3",
+      "createdAt": "2026-02-20T15:08:38.837Z",
+      "updatedAt": "2026-02-20T15:08:38.837Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a82dd364d6c2ccc461eb51",
+      "moduleId": "69a82c24719ea0f02494bf40",
+      "etudiantId": "699875ae32588c9b771cbbe3",
+      "createdAt": "2026-03-04T13:04:19.692Z",
+      "updatedAt": "2026-03-04T13:04:19.692Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a99d905f83246ee8f9b600",
+      "moduleId": "69a99d8a5f83246ee8f9b5e4",
+      "etudiantId": "699875ae32588c9b771cbbe3",
+      "createdAt": "2026-03-05T15:13:20.856Z",
+      "updatedAt": "2026-03-05T15:13:20.856Z",
+      "__v": 0
+    },
+    {
+      "_id": "69a9f4d11a33c5ead12e10e2",
+      "moduleId": "69a9f4c91a33c5ead12e10c6",
+      "etudiantId": "699875ae32588c9b771cbbe3",
+      "createdAt": "2026-03-05T21:25:37.062Z",
+      "updatedAt": "2026-03-05T21:25:37.062Z",
+      "__v": 0
+    },
+    {
+      "_id": "69aabcadb982bfd5015a303e",
+      "moduleId": "69a9983f5f83246ee8f9b5a0",
+      "etudiantId": "69aabbf8b982bfd5015a3035",
+      "createdAt": "2026-03-06T11:38:21.222Z",
+      "updatedAt": "2026-03-06T11:38:21.222Z",
+      "__v": 0
+    }
+  ]
+}
