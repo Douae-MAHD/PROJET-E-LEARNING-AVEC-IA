@@ -6,19 +6,19 @@
 }
 
 :root {
-    --primary-color: #2563EB;
-    --primary-hover: #1D4ED8;
-    --secondary-color: #64748B;
-    --background: #F1F5F9;
-    --card-background: #FFFFFF;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --border-color: #CBD5E1;
-    --success-color: #059669;
-    --error-color: #DC2626;
-    --warning-color: #D97706;
-    --shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+    --primary-color: var(--color-sky);
+    --primary-hover: var(--color-sky);
+    --secondary-color: var(--color-text-muted);
+    --background: var(--color-surface);
+    --card-background: var(--color-surface);
+    --text-primary: var(--color-text);
+    --text-secondary: var(--color-text-muted);
+    --border-color: var(--color-sky-light);
+    --success-color: var(--color-progress);
+    --error-color: var(--color-error);
+    --warning-color: var(--color-gold-deep);
+    --shadow: 0 2px 4px 0 color-mix(in srgb, var(--color-text) 15%, transparent), 0 1px 2px 0 color-mix(in srgb, var(--color-text) 10%, transparent);
+    --shadow-lg: 0 10px 15px -3px color-mix(in srgb, var(--color-text) 20%, transparent), 0 4px 6px -2px color-mix(in srgb, var(--color-text) 15%, transparent);
 }
 
 body {
@@ -78,13 +78,13 @@ body {
     color: white;
     width: 100%;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-sky) 30%, transparent);
 }
 
 .btn-primary:hover {
     background-color: var(--primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+    box-shadow: 0 4px 8px color-mix(in srgb, var(--color-sky) 40%, transparent);
 }
 
 .btn-secondary {
@@ -94,8 +94,8 @@ body {
 }
 
 .btn-secondary:hover {
-    background-color: #475569;
-    box-shadow: 0 2px 4px rgba(100, 116, 139, 0.3);
+    background-color: var(--color-text-muted);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text-muted) 30%, transparent);
 }
 
 .btn-outline {
@@ -108,7 +108,7 @@ body {
 .btn-outline:hover {
     background-color: var(--primary-color);
     color: white;
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-sky) 30%, transparent);
 }
 
 .btn-small {
@@ -147,7 +147,7 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-sky) 10%, transparent);
 }
 
 

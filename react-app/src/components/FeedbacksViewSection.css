@@ -5,17 +5,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --fv-bg: #0F1623;
-  --fv-card: #161E2E;
-  --fv-border: rgba(255, 255, 255, 0.06);
-  --fv-blue: #3B82F6;
-  --fv-violet: #8B5CF6;
-  --fv-green: #10B981;
-  --fv-gold: #F59E0B;
-  --fv-red: #EF4444;
-  --fv-orange: #F97316;
-  --fv-text: #F1F5F9;
-  --fv-muted: #94A3B8;
+  --fv-bg: var(--color-bg);
+  --fv-card: var(--color-surface);
+  --fv-border: color-mix(in srgb, var(--color-surface) 6%, transparent);
+  --fv-blue: var(--color-sky);
+  --fv-violet: var(--color-gold);
+  --fv-green: var(--color-progress);
+  --fv-gold: var(--color-gold);
+  --fv-red: var(--color-error);
+  --fv-orange: var(--color-warning);
+  --fv-text: var(--color-surface);
+  --fv-muted: var(--color-sky);
   --fv-serif: 'Playfair Display', Georgia, serif;
   --fv-sans: 'DM Sans', sans-serif;
   --fv-mono: 'DM Mono', monospace;
@@ -77,12 +77,12 @@
 
 /* ── Error Banner ── */
 .fv-error-banner {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 25%, transparent);
   border-radius: 10px;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
-  color: #FCA5A5;
+  color: var(--color-gold-light);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -91,7 +91,7 @@
 /* ── Generating Bar ── */
 .fv-generating-bar {
   height: 3px;
-  background: rgba(245, 158, 11, 0.1);
+  background: color-mix(in srgb, var(--color-gold) 10%, transparent);
   border-radius: 999px;
   overflow: hidden;
   margin: -1rem 0;
@@ -123,7 +123,7 @@
 .fv-loader-ring {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(59, 130, 246, 0.15);
+  border: 3px solid color-mix(in srgb, var(--color-sky) 15%, transparent);
   border-top-color: var(--fv-blue);
   border-radius: 50%;
   animation: fv-spin 0.8s linear infinite;
@@ -159,7 +159,7 @@
 }
 
 .fv-stat-card {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-surface);
   border: 1px solid var(--fv-border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
@@ -205,9 +205,9 @@
 }
 
 /* Score colors */
-.fv-score-green  { color: #34D399; }
-.fv-score-blue   { color: #60A5FA; }
-.fv-score-orange { color: #FCD34D; }
+.fv-score-green  { color: var(--color-progress); }
+.fv-score-blue   { color: var(--color-sky); }
+.fv-score-orange { color: var(--color-warning); }
 
 /* ── Global Feedback Section ── */
 .fv-global-section {
@@ -276,7 +276,7 @@
 }
 
 .fv-feedback-block {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-surface);
   border: 1px solid var(--fv-border);
   border-radius: 14px;
   padding: 1.25rem;
@@ -298,7 +298,7 @@
   border-left: 3px solid var(--fv-green);
 }
 .fv-fb-green .fv-fb-icon {
-  background: rgba(16, 185, 129, 0.15);
+  background: color-mix(in srgb, var(--color-progress) 15%, transparent);
   color: var(--fv-green);
 }
 
@@ -306,7 +306,7 @@
   border-left: 3px solid var(--fv-red);
 }
 .fv-fb-red .fv-fb-icon {
-  background: rgba(239, 68, 68, 0.15);
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
   color: var(--fv-red);
 }
 
@@ -314,7 +314,7 @@
   border-left: 3px solid var(--fv-orange);
 }
 .fv-fb-orange .fv-fb-icon {
-  background: rgba(249, 115, 22, 0.15);
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
   color: var(--fv-orange);
 }
 
@@ -348,7 +348,7 @@
   content: '—';
   position: absolute;
   left: 0;
-  color: rgba(255,255,255,0.15);
+  color: color-mix(in srgb, var(--color-surface) 15%, transparent);
 }
 
 /* ── Students Section ── */
@@ -385,7 +385,7 @@
 
 /* ── Table ── */
 .fv-table {
-  background: rgba(0,0,0,0.2);
+  background: var(--color-surface);
   border: 1px solid var(--fv-border);
   border-radius: 12px;
   overflow: hidden;
@@ -395,7 +395,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 2fr;
   padding: 0.65rem 1rem;
-  background: rgba(0,0,0,0.2);
+  background: var(--color-bg);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -418,7 +418,7 @@
 }
 
 .fv-table-row:hover {
-  background: rgba(255,255,255,0.02);
+  background: var(--color-sky-light);
 }
 
 .fv-table-name {
@@ -450,15 +450,15 @@
 }
 
 .fv-tag-green {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: color-mix(in srgb, var(--color-progress) 12%, transparent);
+  color: var(--color-progress);
+  border: 1px solid color-mix(in srgb, var(--color-progress) 20%, transparent);
 }
 
 .fv-tag-red {
-  background: rgba(239, 68, 68, 0.1);
-  color: #FCA5A5;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-gold-light);
+  border: 1px solid color-mix(in srgb, var(--color-error) 20%, transparent);
 }
 
 /* ── Empty Feedback State ── */
@@ -468,8 +468,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 2.5rem;
-  background: rgba(0,0,0,0.15);
-  border: 1px dashed rgba(255,255,255,0.08);
+  background: var(--color-surface);
+  border: 1px dashed color-mix(in srgb, var(--color-surface) 8%, transparent);
   border-radius: 14px;
   text-align: center;
   animation: fv-slide-up 0.35s ease;
@@ -520,24 +520,24 @@
 }
 
 .fv-btn-ghost {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: color-mix(in srgb, var(--color-surface) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 9%, transparent);
   color: var(--fv-muted);
 }
 
 .fv-btn-ghost:hover:not(:disabled) {
-  background: rgba(255,255,255,0.09);
+  background: color-mix(in srgb, var(--color-surface) 9%, transparent);
   color: var(--fv-text);
 }
 
 .fv-btn-gold {
-  background: linear-gradient(135deg, var(--fv-gold), #FBBF24);
-  color: #1a1000;
-  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.25);
+  background: linear-gradient(135deg, var(--fv-gold), var(--color-warning));
+  color: var(--color-text);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--color-gold) 25%, transparent);
 }
 
 .fv-btn-gold:hover:not(:disabled) {
-  box-shadow: 0 6px 24px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--color-gold) 45%, transparent);
   transform: translateY(-1px);
 }
 
@@ -549,8 +549,8 @@
 .fv-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255,255,255,0.25);
-  border-top-color: white;
+  border: 2px solid color-mix(in srgb, var(--color-surface) 25%, transparent);
+  border-top-color: var(--color-navy);
   border-radius: 50%;
   animation: fv-spin 0.7s linear infinite;
   display: inline-block;
@@ -558,8 +558,8 @@
 }
 
 .fv-spinner-dark {
-  border-color: rgba(0,0,0,0.2);
-  border-top-color: #1a1000;
+  border-color: color-mix(in srgb, var(--color-text) 20%, transparent);
+  border-top-color: var(--color-text);
 }
 
 /* ── Utility ── */

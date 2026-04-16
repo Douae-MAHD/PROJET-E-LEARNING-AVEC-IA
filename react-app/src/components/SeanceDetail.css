@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
 
 :root {
-  --mv-bg: #0F1623;
-  --mv-card: #161E2E;
-  --mv-card-border: rgba(255, 255, 255, 0.06);
-  --mv-blue: #3B82F6;
-  --mv-green: #10B981;
-  --mv-text: #F1F5F9;
-  --mv-muted: #94A3B8;
+  --mv-bg: var(--color-bg);
+  --mv-card: var(--color-surface);
+  --mv-card-border: color-mix(in srgb, var(--color-surface) 6%, transparent);
+  --mv-blue: var(--color-sky);
+  --mv-green: var(--color-progress);
+  --mv-text: var(--color-surface);
+  --mv-muted: var(--color-sky);
   --mv-font-serif: 'Playfair Display', Georgia, serif;
   --mv-font-sans: 'DM Sans', sans-serif;
 }
@@ -15,7 +15,7 @@
 .sd-wrap {
   min-height: 100vh;
   background: var(--mv-bg);
-  background-image: radial-gradient(ellipse 80% 50% at 50% -5%, rgba(59, 130, 246, 0.1) 0%, transparent 65%);
+  background-image: radial-gradient(ellipse 80% 50% at 50% -5%, color-mix(in srgb, var(--color-sky) 10%, transparent) 0%, transparent 65%);
   padding: 2rem 1rem 4rem;
   color: var(--mv-text);
   font-family: var(--mv-font-sans);
@@ -41,7 +41,7 @@
 .sd-loader-ring {
   width: 48px;
   height: 48px;
-  border: 3px solid rgba(59, 130, 246, 0.2);
+  border: 3px solid color-mix(in srgb, var(--color-sky) 20%, transparent);
   border-top-color: var(--mv-blue);
   border-radius: 50%;
   animation: sd-spin 0.8s linear infinite;
@@ -75,7 +75,7 @@
 }
 
 .sd-back-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--color-surface) 5%, transparent);
   border: 1px solid var(--mv-card-border);
   color: var(--mv-muted);
   border-radius: 8px;
@@ -91,9 +91,9 @@
 
 .sd-inline-error {
   margin-bottom: 1rem;
-  background: rgba(239, 68, 68, 0.15);
-  color: #fecaca;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
+  color: var(--color-gold-light);
+  border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
   padding: 0.7rem 0.9rem;
   border-radius: 10px;
 }
@@ -129,23 +129,23 @@
 }
 
 .sd-badge-type {
-  background: rgba(59, 130, 246, 0.16);
-  color: #93c5fd;
+  background: color-mix(in srgb, var(--color-sky) 16%, transparent);
+  color: var(--color-sky-light);
 }
 
 .sd-badge-done {
-  background: rgba(16, 185, 129, 0.18);
-  color: #34d399;
+  background: color-mix(in srgb, var(--color-progress) 18%, transparent);
+  color: var(--color-progress);
 }
 
 .sd-badge-current {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
+  background: color-mix(in srgb, var(--color-sky) 20%, transparent);
+  color: var(--color-sky-light);
 }
 
 .sd-badge-locked {
-  background: rgba(148, 163, 184, 0.18);
-  color: #cbd5e1;
+  background: color-mix(in srgb, var(--color-sky) 18%, transparent);
+  color: var(--color-sky-light);
 }
 
 .sd-meta {
@@ -196,11 +196,11 @@
 
 .sd-btn-primary {
   background: var(--mv-blue);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .sd-btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--color-bg) 80%, var(--color-surface) 20%);
   color: var(--mv-text);
   border: 1px solid var(--mv-card-border);
 }

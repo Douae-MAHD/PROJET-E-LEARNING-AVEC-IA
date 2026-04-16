@@ -7,15 +7,15 @@
 
 /* ── Variables ── */
 :root {
-  --qv-bg: #0F1623;
-  --qv-card: #161E2E;
-  --qv-card-border: rgba(255, 255, 255, 0.06);
-  --qv-blue: #3B82F6;
-  --qv-green: #10B981;
-  --qv-gold: #F59E0B;
-  --qv-red: #EF4444;
-  --qv-text: #F1F5F9;
-  --qv-muted: #94A3B8;
+  --qv-bg: var(--color-bg);
+  --qv-card: var(--color-surface);
+  --qv-card-border: color-mix(in srgb, var(--color-surface) 6%, transparent);
+  --qv-blue: var(--color-sky);
+  --qv-green: var(--color-progress);
+  --qv-gold: var(--color-gold);
+  --qv-red: var(--color-error);
+  --qv-text: var(--color-surface);
+  --qv-muted: var(--color-sky);
   --qv-font-serif: 'Playfair Display', Georgia, serif;
   --qv-font-sans: 'DM Sans', sans-serif;
   --qv-font-mono: 'DM Mono', monospace;
@@ -26,7 +26,7 @@
   min-height: 100vh;
   background: var(--qv-bg);
   background-image:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+    radial-gradient(ellipse 80% 60% at 50% -10%, color-mix(in srgb, var(--color-sky) 12%, transparent) 0%, transparent 70%);
   font-family: var(--qv-font-sans);
   color: var(--qv-text);
   padding: 2rem 1rem 4rem;
@@ -58,7 +58,7 @@
 .qv-loader-ring {
   width: 48px;
   height: 48px;
-  border: 3px solid rgba(59, 130, 246, 0.2);
+  border: 3px solid color-mix(in srgb, var(--color-sky) 20%, transparent);
   border-top-color: var(--qv-blue);
   border-radius: 50%;
   animation: qv-spin 0.8s linear infinite;
@@ -96,7 +96,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
+  background: color-mix(in srgb, var(--color-surface) 5%, transparent);
   border: 1px solid var(--qv-card-border);
   color: var(--qv-muted);
   padding: 0.5rem 1rem;
@@ -109,7 +109,7 @@
 }
 
 .qv-back-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: color-mix(in srgb, var(--color-surface) 10%, transparent);
   color: var(--qv-text);
 }
 
@@ -134,8 +134,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: color-mix(in srgb, var(--color-sky) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-sky) 30%, transparent);
   color: var(--qv-blue);
   padding: 0.3rem 0.75rem;
   border-radius: 999px;
@@ -148,8 +148,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: color-mix(in srgb, var(--color-sky) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-sky) 25%, transparent);
   border-radius: 12px;
   padding: 0.6rem 1.25rem;
 }
@@ -186,14 +186,14 @@
 
 .qv-progress-bar {
   height: 4px;
-  background: rgba(255,255,255,0.07);
+  background: color-mix(in srgb, var(--color-surface) 7%, transparent);
   border-radius: 999px;
   overflow: hidden;
 }
 
 .qv-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--qv-blue), #60A5FA);
+  background: linear-gradient(90deg, var(--qv-blue), var(--color-sky));
   border-radius: 999px;
   transition: width 0.4s ease;
 }
@@ -217,11 +217,11 @@
 }
 
 .qv-question-card.answered {
-  border-color: rgba(59, 130, 246, 0.2);
+  border-color: color-mix(in srgb, var(--color-sky) 20%, transparent);
 }
 
 .qv-question-card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-text) 35%, transparent);
 }
 
 @keyframes qv-slide-in {
@@ -234,8 +234,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.15);
-  border: 2px solid rgba(59, 130, 246, 0.35);
+  background: color-mix(in srgb, var(--color-sky) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-sky) 35%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,8 +272,8 @@
   align-items: center;
   gap: 0.875rem;
   padding: 0.875rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-bg) 75%, var(--color-surface) 25%);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -286,24 +286,24 @@
 }
 
 .qv-option:hover:not(.qv-opt-correct):not(.qv-opt-incorrect) {
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: color-mix(in srgb, var(--color-sky) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-sky) 30%, transparent);
   transform: translateX(3px);
 }
 
 .qv-opt-selected {
-  background: rgba(59, 130, 246, 0.1) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: color-mix(in srgb, var(--color-sky) 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-sky) 50%, transparent) !important;
 }
 
 .qv-opt-correct {
-  background: rgba(16, 185, 129, 0.1) !important;
-  border-color: rgba(16, 185, 129, 0.5) !important;
+  background: color-mix(in srgb, var(--color-progress) 10%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-progress) 50%, transparent) !important;
 }
 
 .qv-opt-incorrect {
-  background: rgba(239, 68, 68, 0.08) !important;
-  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: color-mix(in srgb, var(--color-error) 8%, transparent) !important;
+  border-color: color-mix(in srgb, var(--color-error) 40%, transparent) !important;
 }
 
 .qv-opt-letter {
@@ -313,7 +313,7 @@
   min-width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--color-surface) 6%, transparent);
   font-family: var(--qv-font-mono);
   font-size: 0.8rem;
   font-weight: 600;
@@ -390,24 +390,24 @@
 }
 
 .qv-btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--color-surface) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 10%, transparent);
   color: var(--qv-muted);
 }
 
 .qv-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--color-surface) 10%, transparent);
   color: var(--qv-text);
 }
 
 .qv-btn-gold {
-  background: linear-gradient(135deg, var(--qv-gold), #FBBF24);
-  color: #1a1000;
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, var(--qv-gold), var(--color-warning));
+  color: var(--color-text);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-gold) 30%, transparent);
 }
 
 .qv-btn-gold:hover:not(:disabled) {
-  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 6px 28px color-mix(in srgb, var(--color-gold) 50%, transparent);
   transform: translateY(-1px);
 }
 
@@ -421,8 +421,8 @@
 .qv-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
+  border: 2px solid color-mix(in srgb, var(--color-surface) 30%, transparent);
+  border-top-color: var(--color-navy);
   border-radius: 50%;
   animation: qv-spin 0.7s linear infinite;
   display: inline-block;
@@ -432,7 +432,7 @@
 .qv-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -448,13 +448,13 @@
 
 .qv-modal {
   background: var(--qv-card);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid color-mix(in srgb, var(--color-bg) 85%, var(--color-surface) 15%);
   border-radius: 20px;
   padding: 2.5rem;
   max-width: 420px;
   width: 90%;
   text-align: center;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 32px 80px color-mix(in srgb, var(--color-text-muted) 30%, transparent);
   animation: qv-modal-in 0.3s ease;
 }
 
@@ -520,7 +520,7 @@
 
 .qv-circle-bg {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.07);
+  stroke: color-mix(in srgb, var(--color-surface) 7%, transparent);
   stroke-width: 8;
 }
 
@@ -586,21 +586,21 @@
 }
 
 .result-excellent {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34D399;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: color-mix(in srgb, var(--color-progress) 12%, transparent);
+  color: var(--color-progress);
+  border: 1px solid color-mix(in srgb, var(--color-progress) 25%, transparent);
 }
 
 .result-good {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: color-mix(in srgb, var(--color-sky) 12%, transparent);
+  color: var(--color-sky);
+  border: 1px solid color-mix(in srgb, var(--color-sky) 25%, transparent);
 }
 
 .result-low {
-  background: rgba(245, 158, 11, 0.1);
-  color: #FCD34D;
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: color-mix(in srgb, var(--color-gold) 10%, transparent);
+  color: var(--color-warning);
+  border: 1px solid color-mix(in srgb, var(--color-gold) 20%, transparent);
 }
 
 .qv-result-actions {
@@ -618,7 +618,7 @@
 }
 
 .qv-section-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--color-surface) 3%, transparent);
   border: 1px solid var(--qv-card-border);
   border-radius: 12px;
   padding: 1.25rem;
@@ -678,7 +678,7 @@
 }
 
 .qv-fb-strength .qv-fb-icon {
-  background: rgba(16, 185, 129, 0.15);
+  background: color-mix(in srgb, var(--color-progress) 15%, transparent);
   color: var(--qv-green);
 }
 
@@ -687,7 +687,7 @@
 }
 
 .qv-fb-weak .qv-fb-icon {
-  background: rgba(239, 68, 68, 0.15);
+  background: color-mix(in srgb, var(--color-error) 15%, transparent);
   color: var(--qv-red);
 }
 
@@ -696,7 +696,7 @@
 }
 
 .qv-fb-reco .qv-fb-icon {
-  background: rgba(245, 158, 11, 0.15);
+  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
   color: var(--qv-gold);
 }
 
@@ -731,7 +731,7 @@
   content: '—';
   position: absolute;
   left: 0;
-  color: rgba(255,255,255,0.2);
+  color: color-mix(in srgb, var(--color-surface) 20%, transparent);
 }
 
 /* ── Corrections ── */
@@ -808,7 +808,7 @@
 }
 
 .qv-correction-details {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-bg);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
@@ -828,12 +828,12 @@
 
 .qv-correct-answer {
   font-size: 0.875rem;
-  color: #34D399;
+  color: var(--color-progress);
   font-weight: 500;
 }
 
 .qv-correct-answer strong {
-  color: #34D399;
+  color: var(--color-progress);
 }
 
 .qv-correction-comment {

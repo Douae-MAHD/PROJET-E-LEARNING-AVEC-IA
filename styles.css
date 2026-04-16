@@ -6,17 +6,17 @@
 }
 
 :root {
-    --primary-color: #4F46E5;
-    --primary-hover: #4338CA;
-    --secondary-color: #6B7280;
-    --background: #F9FAFB;
-    --card-background: #FFFFFF;
-    --text-primary: #111827;
-    --text-secondary: #6B7280;
-    --border-color: #E5E7EB;
-    --success-color: #10B981;
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --primary-color: var(--color-sky);
+    --primary-hover: var(--color-navy-mid);
+    --secondary-color: var(--color-text-muted);
+    --background: var(--color-surface);
+    --card-background: var(--color-surface);
+    --text-primary: var(--color-text);
+    --text-secondary: var(--color-text-muted);
+    --border-color: var(--color-bg);
+    --success-color: var(--color-progress);
+    --shadow: 0 1px 3px 0 color-mix(in srgb, var(--color-text) 10%, transparent), 0 1px 2px 0 color-mix(in srgb, var(--color-text) 6%, transparent);
+    --shadow-lg: 0 10px 15px -3px color-mix(in srgb, var(--color-text) 10%, transparent), 0 4px 6px -2px color-mix(in srgb, var(--color-text) 5%, transparent);
 }
 
 body {
@@ -38,7 +38,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-bg) 100%);
 }
 
 .login-container {
@@ -143,7 +143,7 @@ body {
 }
 
 .btn-secondary:hover {
-    background-color: #4B5563;
+    background-color: var(--color-text-muted);
 }
 
 .btn-outline {
@@ -239,7 +239,7 @@ body {
 
 .card-header {
     padding: 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--color-navy) 0%, var(--color-navy-mid) 100%);
     color: white;
     display: flex;
     justify-content: space-between;

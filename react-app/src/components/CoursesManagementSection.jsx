@@ -176,7 +176,7 @@ function CoursesManagementSection() {
             return (
               <div key={module._id} className="db-module-card">
                 {/* Barre colorée en haut */}
-                <div className="db-module-top-bar" style={{ background: palette.bar }} />
+                <div className="db-module-top-bar" />
 
                 <div className="db-module-body">
                   <div className="db-module-title-row">

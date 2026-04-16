@@ -1,0 +1,18 @@
+:root {
+  --color-navy:       #1A3A5C;
+  --color-navy-mid:   #235284;
+  --color-sky:        #378ADD;
+  --color-sky-light:  #E6F1FB;
+  --color-gold:       #E8A020;
+  --color-gold-deep:  #BA7517;
+  --color-gold-light: #FAEEDA;
+  --color-gold-text:  #854F0B;
+  --color-success:    #639922;
+  --color-progress:   #1D9E75;
+  --color-error:      #E24B4A;
+  --color-warning:    #EF9F27;
+  --color-text:       #1A1A1A;
+  --color-text-muted: #6B6A66;
+  --color-surface:    #FFFFFF;
+  --color-bg:         #F5F7FA;
+}

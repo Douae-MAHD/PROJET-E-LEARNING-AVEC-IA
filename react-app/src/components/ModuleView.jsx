@@ -11,13 +11,11 @@ function ModuleView() {
   const [seances, setSeances] = useState([])
   const [selectedSeanceId, setSelectedSeanceId] = useState('')
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(null) // store key of what's generating
+  const [generating, setGenerating] = useState(null)
   const [error, setError] = useState('')
   const [globalActionError, setGlobalActionError] = useState('')
 
-  useEffect(() => {
-    loadModule()
-  }, [moduleId])
+  useEffect(() => { loadModule() }, [moduleId])
 
   const getSelectedSeance = () => seances.find(s => s._id === selectedSeanceId) || null
 
@@ -38,7 +36,6 @@ function ModuleView() {
       const data = await modulesAPI.getSubModule(subModuleId)
       setSelectedSubModule(data)
       setSelectedSeanceId('')
-
       const seancesData = await seancesAPI.getBySubModule(subModuleId)
       const sortedSeances = (Array.isArray(seancesData) ? seancesData : [])
         .slice()
@@ -60,9 +57,7 @@ function ModuleView() {
 
   const handleGenerateQuiz = async (itemKey) => {
     try {
-      if (!selectedSeanceId) {
-        throw new Error('Aucune séance liée à ce contenu')
-      }
+      if (!selectedSeanceId) throw new Error('Aucune séance liée à ce contenu')
       setError('')
       setGenerating(`pdf-quiz-${itemKey}`)
       const response = await quizAPI.generate(selectedSeanceId)
@@ -84,9 +79,7 @@ function ModuleView() {
 
   const handleGenerateExercises = async (itemKey) => {
     try {
-      if (!selectedSeanceId) {
-        throw new Error('Aucune séance liée à ce contenu')
-      }
+      if (!selectedSeanceId) throw new Error('Aucune séance liée à ce contenu')
       setError('')
       setGenerating(`pdf-ex-${itemKey}`)
       const response = await exercisesAPI.generate(selectedSeanceId)
@@ -104,9 +97,7 @@ function ModuleView() {
 
   const handleGenerateQuizForSeance = async () => {
     try {
-      if (!selectedSeanceId) {
-        throw new Error('Aucune séance disponible pour ce cours')
-      }
+      if (!selectedSeanceId) throw new Error('Aucune séance disponible pour ce cours')
       setError('')
       setGenerating(`course-quiz-${selectedSeanceId}`)
       const response = await quizAPI.generateForSeance(selectedSeanceId)
@@ -126,9 +117,7 @@ function ModuleView() {
 
   const handleGenerateExercisesForSeance = async () => {
     try {
-      if (!selectedSeanceId) {
-        throw new Error('Aucune séance disponible pour ce cours')
-      }
+      if (!selectedSeanceId) throw new Error('Aucune séance disponible pour ce cours')
       setError('')
       setGenerating(`course-ex-${selectedSeanceId}`)
       const response = await exercisesAPI.generateForSeance(selectedSeanceId)
@@ -148,17 +137,14 @@ function ModuleView() {
     try {
       setGlobalActionError('')
       setGenerating('global-quiz')
-
       const existing = await quizAPI.checkModuleExisting(moduleId)
       if (existing?.exists && existing?.quizId) {
         navigate(`/quiz/${existing.quizId}`)
         return
       }
-
       const response = await quizAPI.generateGlobal(moduleId)
       const quizId = response?._id || response?.quizId || response?.quiz?._id
       if (!quizId) throw new Error('Impossible de récupérer l\'ID du quiz global')
-
       navigate(`/quiz/${quizId}`)
     } catch (err) {
       setGlobalActionError(err.message || 'Erreur lors du chargement du quiz global')
@@ -171,20 +157,16 @@ function ModuleView() {
     try {
       setGlobalActionError('')
       setGenerating('global-ex')
-
       const existing = await exercisesAPI.checkModuleExisting(moduleId)
       if (existing?.exists && existing?.exerciseId) {
         navigate(`/exercise/${existing.exerciseId}`)
         return
       }
-
       const response = await exercisesAPI.generateGlobal(moduleId)
       const exercises = Array.isArray(response) ? response : (response?.exercises || [])
       if (!exercises || exercises.length === 0) throw new Error('Aucun exercice global trouvé')
-
       const firstExerciseId = exercises[0]._id || exercises[0].id
       if (!firstExerciseId) throw new Error('Impossible de récupérer l\'ID de l\'exercice global')
-
       navigate(`/exercise/${firstExerciseId}`)
     } catch (err) {
       setGlobalActionError(err.message || 'Erreur lors du chargement des exercices globaux')
@@ -200,12 +182,12 @@ function ModuleView() {
 
   const isGenerating = generating !== null
 
-  // ─── LOADING / ERROR ────────────────────────────────────────────────────────
+  // ─── LOADING ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="mv-loading-screen">
         <div className="mv-loader-ring"></div>
-        <p>Chargement du module<span className="mv-dots">...</span></p>
+        <p>Chargement du module<span className="mv-dots"></span></p>
       </div>
     )
   }
@@ -215,7 +197,7 @@ function ModuleView() {
       <div className="mv-error-screen">
         <div className="mv-error-icon">⚠️</div>
         <p>{error}</p>
-        <button className="mv-btn mv-btn-secondary" onClick={() => navigate(-1)}>Retour</button>
+        <button className="mv-btn mv-btn-secondary" onClick={() => navigate(-1)}>← Retour</button>
       </div>
     )
   }
@@ -224,7 +206,7 @@ function ModuleView() {
     return (
       <div className="mv-error-screen">
         <p>Module non trouvé</p>
-        <button className="mv-btn mv-btn-secondary" onClick={() => navigate(-1)}>Retour</button>
+        <button className="mv-btn mv-btn-secondary" onClick={() => navigate(-1)}>← Retour</button>
       </div>
     )
   }
@@ -234,11 +216,12 @@ function ModuleView() {
     const courseKey = selectedSubModule._id
     const selectedSeance = getSelectedSeance()
     const isGenCourseQuiz = generating === `course-quiz-${selectedSeanceId}`
-    const isGenCourseEx = generating === `course-ex-${selectedSeanceId}`
+    const isGenCourseEx   = generating === `course-ex-${selectedSeanceId}`
 
     return (
       <div className="mv-wrap">
         <div className="mv-container">
+
           {/* Breadcrumb */}
           <div className="mv-breadcrumb">
             <button onClick={() => navigate('/dashboard/student')} className="mv-bc-link">Dashboard</button>
@@ -253,6 +236,7 @@ function ModuleView() {
             <button className="mv-back-btn" onClick={() => setSelectedSubModule(null)}>
               ← Retour au module
             </button>
+            <div className="mv-module-tag">📖 Cours</div>
             <div className="mv-header-body">
               <div className="mv-header-icon">📖</div>
               <div>
@@ -266,7 +250,9 @@ function ModuleView() {
 
           {/* Séance selector */}
           <div className="mv-seance-picker">
-            <label htmlFor="mv-seance-select" className="mv-seance-label">Séance de travail</label>
+            <label htmlFor="mv-seance-select" className="mv-seance-label">
+              // Séance de travail
+            </label>
             <select
               id="mv-seance-select"
               className="mv-seance-select"
@@ -282,15 +268,15 @@ function ModuleView() {
             </select>
             <div className="mv-seance-current">
               {selectedSeance
-                ? `Séance sélectionnée : ${selectedSeance.titre} (ordre ${selectedSeance.ordre ?? '-'})`
-                : 'Aucune séance sélectionnée'}
+                ? `▶ ${selectedSeance.titre} (ordre ${selectedSeance.ordre ?? '-'})`
+                : '— Aucune séance sélectionnée'}
             </div>
             {seances.length === 0 && (
-              <div className="mv-seance-empty">Aucune séance disponible pour ce cours.</div>
+              <div className="mv-seance-empty">✕ Aucune séance disponible pour ce cours.</div>
             )}
           </div>
 
-          {/* Course-level Generation */}
+          {/* Course-level generation banner */}
           {selectedSubModule.pdfs && selectedSubModule.pdfs.length > 0 && (
             <div className="mv-global-banner">
               <div className="mv-global-banner-left">
@@ -306,14 +292,18 @@ function ModuleView() {
                   onClick={handleGenerateQuizForSeance}
                   disabled={isGenerating || !selectedSeanceId}
                 >
-                  {isGenCourseQuiz ? <><span className="mv-spinner"></span> Génération...</> : '📝 Quiz du Cours'}
+                  {isGenCourseQuiz
+                    ? <><span className="mv-spinner"></span> Génération...</>
+                    : '📝 Quiz du Cours'}
                 </button>
                 <button
                   className={`mv-btn mv-btn-outline-violet ${isGenCourseEx ? 'mv-btn-loading' : ''}`}
                   onClick={handleGenerateExercisesForSeance}
                   disabled={isGenerating || !selectedSeanceId}
                 >
-                  {isGenCourseEx ? <><span className="mv-spinner"></span> Génération...</> : '✏️ Exercices du Cours'}
+                  {isGenCourseEx
+                    ? <><span className="mv-spinner"></span> Génération...</>
+                    : '✏️ Exercices du Cours'}
                 </button>
               </div>
             </div>
@@ -327,14 +317,17 @@ function ModuleView() {
                 {selectedSubModule.pdfs.map(pdf => {
                   const pdfKey = pdf._id || pdf.id
                   const isGenPdfQuiz = generating === `pdf-quiz-${pdfKey}`
-                  const isGenPdfEx = generating === `pdf-ex-${pdfKey}`
+                  const isGenPdfEx   = generating === `pdf-ex-${pdfKey}`
 
                   return (
-                    <div key={pdfKey} className={`mv-pdf-card ${isGenPdfQuiz || isGenPdfEx ? 'mv-generating' : ''}`}>
+                    <div
+                      key={pdfKey}
+                      className={`mv-pdf-card ${isGenPdfQuiz || isGenPdfEx ? 'mv-generating' : ''}`}
+                    >
                       {(isGenPdfQuiz || isGenPdfEx) && (
                         <div className="mv-gen-overlay">
                           <div className="mv-gen-pulse"></div>
-                          <span>🤖 L'IA génère<span className="mv-dots">...</span></span>
+                          <span>🤖 L'IA génère<span className="mv-dots"></span></span>
                           <div className="mv-gen-bar"></div>
                         </div>
                       )}
@@ -344,11 +337,11 @@ function ModuleView() {
                           <div className="mv-pdf-name">{pdf.nom_fichier}</div>
                           <div className="mv-pdf-size">{(pdf.taille_fichier / 1024).toFixed(1)} KB</div>
                         </div>
-                        <span className="mv-badge mv-badge-green">PDF disponible</span>
+                        <span className="mv-badge mv-badge-green">PDF</span>
                       </div>
                       <div className="mv-pdf-actions">
                         <button
-                          className="mv-btn mv-btn-ghost"
+                          className="mv-btn mv-btn-secondary mv-btn-sm"
                           onClick={() => handlePDFClick(pdf)}
                           disabled={isGenerating}
                         >
@@ -359,14 +352,18 @@ function ModuleView() {
                           onClick={() => handleGenerateQuiz(pdfKey)}
                           disabled={isGenerating || !selectedSeanceId}
                         >
-                          {isGenPdfQuiz ? <span className="mv-spinner mv-spinner-sm"></span> : '📝 Quiz PDF'}
+                          {isGenPdfQuiz
+                            ? <span className="mv-spinner mv-spinner-sm"></span>
+                            : '📝 Quiz'}
                         </button>
                         <button
                           className={`mv-btn mv-btn-outline-violet mv-btn-sm ${isGenPdfEx ? 'mv-btn-loading' : ''}`}
                           onClick={() => handleGenerateExercises(pdfKey)}
                           disabled={isGenerating || !selectedSeanceId}
                         >
-                          {isGenPdfEx ? <span className="mv-spinner mv-spinner-sm"></span> : '✏️ Exercices'}
+                          {isGenPdfEx
+                            ? <span className="mv-spinner mv-spinner-sm"></span>
+                            : '✏️ Exercices'}
                         </button>
                       </div>
                     </div>
@@ -377,6 +374,7 @@ function ModuleView() {
               <div className="mv-empty">Aucun PDF disponible pour ce cours.</div>
             )}
           </div>
+
         </div>
       </div>
     )
@@ -384,11 +382,12 @@ function ModuleView() {
 
   // ─── MAIN MODULE VIEW ───────────────────────────────────────────────────────
   const isGenGlobalQuiz = generating === 'global-quiz'
-  const isGenGlobalEx = generating === 'global-ex'
+  const isGenGlobalEx   = generating === 'global-ex'
 
   return (
     <div className="mv-wrap">
       <div className="mv-container">
+
         {/* Breadcrumb */}
         <div className="mv-breadcrumb">
           <button onClick={() => navigate('/dashboard/student')} className="mv-bc-link">Dashboard</button>
@@ -400,6 +399,7 @@ function ModuleView() {
 
         {/* Page Header */}
         <div className="mv-page-header">
+          <div className="mv-module-tag">🎓 Module</div>
           <div className="mv-header-body">
             <div className="mv-header-icon mv-header-icon-lg">🎓</div>
             <div>
@@ -426,14 +426,18 @@ function ModuleView() {
               onClick={handleQuizGlobal}
               disabled={isGenerating}
             >
-              {isGenGlobalQuiz ? <><span className="mv-spinner"></span> Chargement...</> : '📝 Quiz Global'}
+              {isGenGlobalQuiz
+                ? <><span className="mv-spinner"></span> Chargement...</>
+                : '📝 Quiz Global'}
             </button>
             <button
               className={`mv-btn mv-btn-outline-violet ${isGenGlobalEx ? 'mv-btn-loading' : ''}`}
               onClick={handleExercicesGlobaux}
               disabled={isGenerating}
             >
-              {isGenGlobalEx ? <><span className="mv-spinner"></span> Chargement...</> : '✏️ Exercices Globaux'}
+              {isGenGlobalEx
+                ? <><span className="mv-spinner"></span> Chargement...</>
+                : '✏️ Exercices Globaux'}
             </button>
             <button
               className="mv-btn mv-btn-ghost"
@@ -444,14 +448,16 @@ function ModuleView() {
             </button>
           </div>
           {globalActionError && (
-            <p className="error" style={{ marginTop: '0.75rem' }}>Erreur: {globalActionError}</p>
+            <p className="error" style={{ marginTop: '0.75rem' }}>✕ {globalActionError}</p>
           )}
         </div>
 
         {/* Sub-modules */}
         <div className="mv-section">
           <h2 className="mv-section-title">Cours disponibles</h2>
-          <p className="mv-section-sub">Sélectionnez un cours pour explorer les PDFs et générer des évaluations ciblées.</p>
+          <p className="mv-section-sub">
+            Sélectionnez un cours pour explorer les PDFs et générer des évaluations ciblées.
+          </p>
 
           {module.sub_modules && module.sub_modules.length > 0 ? (
             <div className="mv-sub-modules-grid">
@@ -505,6 +511,7 @@ function ModuleView() {
             <div className="mv-empty">Aucun cours disponible pour ce module.</div>
           )}
         </div>
+
       </div>
     </div>
   )

@@ -10,6 +10,9 @@ import SubModuleManagement from './components/SubModuleManagement'
 import QuizView from './components/QuizView'
 import ExerciseView from './components/ExerciseView'
 import ModuleFeedback from './components/ModuleFeedback'
+import QCMPage from './pages/QCMPage'
+import SeancePage from './pages/SeancePage'
+import EvaluationPage from './pages/EvaluationPage'
 
 function App() {
   return (
@@ -20,7 +23,10 @@ function App() {
       <Route path="/dashboard/teacher" element={<DashboardTeacher />} />
       <Route path="/module/:moduleId" element={<ModuleView />} />
       <Route path="/module/:moduleId/seances" element={<SeanceView />} />
-      <Route path="/seance/:seanceId" element={<SeanceDetail />} />
+      <Route path="/seance-detail/:seanceId" element={<SeanceDetail />} />
+      <Route path="/qcm/:moduleId" element={<QCMPage />} />
+      <Route path="/seance/:id" element={<SeancePage />} />
+      <Route path="/evaluation/:id" element={<EvaluationPage />} />
       <Route path="/module/:moduleId/feedback" element={<ModuleFeedback />} />
       <Route path="/feedback/module/:moduleId" element={<ModuleFeedback />} />
       <Route path="/teacher/module/:moduleId" element={<SubModuleManagement />} />

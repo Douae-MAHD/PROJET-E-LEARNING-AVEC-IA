@@ -35,6 +35,8 @@ const schema = Joi.object({
     'any.required': 'Le type est requis',
   }),
 
+  phase: Joi.string().optional(),
+
   // ✅ ADD THIS BLOCK:
   startTime: Joi.string()
     .pattern(timeRegex)

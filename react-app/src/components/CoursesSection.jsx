@@ -42,7 +42,7 @@ function ModuleCard({ module, index, onAccess }) {
       className="db-module-card"
       style={{ animationDelay: `${index * 0.08}s` }}
     >
-      <div className="db-module-top-bar" style={{ background: color }} />
+      <div className="db-module-top-bar" />
 
       <div className="db-module-body">
         <div className="db-module-title-row">

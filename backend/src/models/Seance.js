@@ -38,6 +38,12 @@ const seanceSchema = new mongoose.Schema(
       },
       required: [true, 'Le type est requis'],
     },
+    phase: {
+      type: String,
+      enum: ['prelab', 'inlab', 'postlab'],
+      required: true,
+      default: 'prelab',
+    },
     dateSeance: {
       type: Date,
       default: null,

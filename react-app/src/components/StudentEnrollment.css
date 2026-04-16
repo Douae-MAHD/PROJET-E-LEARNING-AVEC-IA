@@ -3,14 +3,14 @@
 }
 
 .enrollment-section h3 {
-  color: #0F172A;
+  color: var(--color-text);
   margin-bottom: 1.5rem;
   font-weight: 800;
   font-size: 1.3rem;
 }
 
 .enrollment-section h4 {
-  color: #2563EB;
+  color: var(--color-sky);
   margin-top: 1.5rem;
   margin-bottom: 1rem;
   font-weight: 700;
@@ -35,21 +35,21 @@
   padding: 1rem;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text) 10%, transparent);
   transition: all 0.2s;
 }
 
 .student-item:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px color-mix(in srgb, var(--color-text) 15%, transparent);
   transform: translateY(-2px);
 }
 
 .student-item.enrolled {
-  border-left: 4px solid #10B981;
+  border-left: 4px solid var(--color-progress);
 }
 
 .student-item.available {
-  border-left: 4px solid #3B82F6;
+  border-left: 4px solid var(--color-sky);
 }
 
 .student-info {
@@ -60,33 +60,33 @@
 }
 
 .student-info strong {
-  color: #0F172A;
+  color: var(--color-text);
   font-weight: 700;
   font-size: 1rem;
 }
 
 .student-email {
-  color: #64748B;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   font-weight: 500;
 }
 
 .student-info small {
-  color: #94A3B8;
+  color: var(--color-sky);
   font-size: 0.85rem;
 }
 
 .no-students {
-  color: #64748B;
+  color: var(--color-text-muted);
   font-style: italic;
   padding: 1rem;
   text-align: center;
-  background: #F1F5F9;
+  background: var(--color-surface);
   border-radius: 8px;
 }
 
 .btn-danger {
-  background: #DC2626;
+  background: var(--color-error);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -97,9 +97,9 @@
 }
 
 .btn-danger:hover {
-  background: #B91C1C;
+  background: var(--color-gold-text);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .btn-small {

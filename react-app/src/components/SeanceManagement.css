@@ -5,8 +5,8 @@
 }
 
 .sm-back-button {
-  background: #95a5a6;
-  color: #fff;
+  background: var(--color-text-muted);
+  color: var(--color-surface);
   border: none;
   padding: 0.55rem 1rem;
   border-radius: 4px;
@@ -27,9 +27,9 @@
 .sm-card,
 .sm-empty,
 .sm-inline-error {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 .sm-add-form {
@@ -41,14 +41,14 @@
   width: 100%;
   padding: 0.7rem;
   margin-bottom: 0.75rem;
-  border: 2px solid #ecf0f1;
+  border: 2px solid var(--color-bg);
   border-radius: 4px;
   font-size: 1rem;
 }
 .sm-form-label {
   display: block;
   margin-bottom: 0.25rem;
-  color: #2c3e50;
+  color: var(--color-navy);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -83,8 +83,8 @@
 .sm-type-badge {
   display: inline-flex;
   align-items: center;
-  background: #ecf2ff;
-  color: #2752cc;
+  background: var(--color-sky-light);
+  color: var(--color-sky);
   border-radius: 999px;
   padding: 0.2rem 0.65rem;
   font-size: 0.78rem;
@@ -93,7 +93,7 @@
 
 .sm-meta {
   margin: 0.5rem 0 0.9rem;
-  color: #2c3e50;
+  color: var(--color-navy);
   font-size: 0.9rem;
 }
 
@@ -105,7 +105,7 @@
 
 .sm-edit-form {
   margin-top: 0.9rem;
-  border-top: 1px solid #ecf0f1;
+  border-top: 1px solid var(--color-bg);
   padding-top: 0.9rem;
 }
 
@@ -124,23 +124,23 @@
 }
 
 .sm-btn-primary {
-  background: #3498db;
-  color: #fff;
+  background: var(--color-sky);
+  color: var(--color-surface);
 }
 
 .sm-btn-secondary {
-  background: #ecf0f1;
-  color: #2c3e50;
+  background: var(--color-bg);
+  color: var(--color-navy);
 }
 
 .sm-btn-danger {
-  background: #e74c3c;
-  color: #fff;
+  background: var(--color-error);
+  color: var(--color-surface);
 }
 
 .sm-btn-upload {
-  background: #2ecc71;
-  color: #fff;
+  background: var(--color-progress);
+  color: var(--color-surface);
 }
 
 .sm-hidden-input {
@@ -154,18 +154,18 @@
 }
 
 .sm-error {
-  color: #e74c3c;
+  color: var(--color-error);
 }
 
 .sm-inline-error {
   padding: 0.8rem 0.95rem;
   margin-bottom: 1rem;
-  color: #b91c1c;
-  background: #fee2e2;
+  color: var(--color-gold-text);
+  background: var(--color-gold-light);
 }
 
 .sm-empty {
   padding: 1.2rem;
   text-align: center;
-  color: #2c3e50;
+  color: var(--color-navy);
 }

@@ -13,14 +13,14 @@
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 .form-input, .form-textarea {
   width: 100%;
   padding: 0.75rem;
   margin-bottom: 1rem;
-  border: 2px solid #ecf0f1;
+  border: 2px solid var(--color-bg);
   border-radius: 4px;
   font-size: 1rem;
 }
@@ -40,7 +40,7 @@
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 10%, transparent);
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -54,7 +54,7 @@
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 .seance-selector {
@@ -62,24 +62,24 @@
   padding: 1.5rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 .seance-selector label {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-navy);
 }
 
 .selected-seance-text {
   margin: 0.5rem 0 0;
   font-size: 0.9rem;
-  color: #2c3e50;
+  color: var(--color-navy);
 }
 
 .seance-warning {
-  color: #e67e22;
+  color: var(--color-gold);
   font-weight: 600;
 }
 
@@ -98,7 +98,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--color-surface);
   border-radius: 6px;
 }
 
@@ -108,12 +108,12 @@
 }
 
 .btn.btn-danger {
-  background: #e74c3c;
+  background: var(--color-error);
   color: white;
 }
 
 .back-button {
-  background: #95a5a6;
+  background: var(--color-text-muted);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -128,7 +128,7 @@
 }
 
 .error {
-  color: #e74c3c;
+  color: var(--color-error);
 }
 
 

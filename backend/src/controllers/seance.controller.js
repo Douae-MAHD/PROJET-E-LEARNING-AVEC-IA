@@ -3,7 +3,11 @@ import { asyncHandler } from '../utils/errorHandler.js';
 import { sendSuccess } from '../utils/responseFormatter.js';
 
 export const createSeance = asyncHandler(async (req, res) => {
-  const result = await seanceService.createSeance(req.body);
+  const { phase } = req.body;
+  const result = await seanceService.createSeance({
+    ...req.body,
+    phase: phase || 'prelab',
+  });
   sendSuccess(res, result, 'Séance créée', 201);
 });
 
